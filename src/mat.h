@@ -28,6 +28,12 @@
 #include "option.h"
 #include "platform.h"
 
+#if NCNN_CUDA
+#include <assert.h>
+#include <memory>
+#include <cuda_util.h>
+#endif
+
 #if NCNN_VULKAN
 #include <vulkan/vulkan.h>
 #endif // NCNN_VULKAN
@@ -41,10 +47,16 @@
 
 namespace ncnn {
 
+#if NCNN_CUDA
+class CudaMat;
+#endif
+
 #if NCNN_VULKAN
 class VkMat;
 class VkImageMat;
 #endif // NCNN_VULKAN
+
+
 
 // the three dimension matrix
 class Mat
@@ -121,6 +133,12 @@ public:
     void create(int w, int h, int c, size_t elemsize, int elempack, Allocator* allocator = 0);
     // allocate like
     void create_like(const Mat& m, Allocator* allocator = 0);
+#if NCNN_CUDA
+    void create_like(const CudaMat& m, Allocator* _allocator);
+
+    Mat& operator=(const CudaMat& cumat);
+#endif
+
 #if NCNN_VULKAN
     // allocate like
     void create_like(const VkMat& m, Allocator* allocator = 0);
@@ -285,6 +303,226 @@ public:
 
     size_t cstep;
 };
+
+
+#if NCNN_CUDA
+class CudaMat
+{
+public:
+    // empty
+    CudaMat();
+    // vec
+    CudaMat(int w, size_t elemsize = 4u, std::shared_ptr<CudaAllocator> allocator = 0);
+    // image
+    CudaMat(int w, int h, size_t elemsize = 4u, std::shared_ptr<CudaAllocator> allocator = 0);
+    // dim
+    CudaMat(int w, int h, int c, size_t elemsize = 4u, std::shared_ptr<CudaAllocator> allocator = 0);
+    // packed vec
+    CudaMat(int w, size_t elemsize, int elempack, std::shared_ptr<CudaAllocator> allocator = 0);
+    // packed image
+    CudaMat(int w, int h, size_t elemsize, int elempack, std::shared_ptr<CudaAllocator> allocator = 0);
+    // packed dim
+    CudaMat(int w, int h, int c, size_t elemsize, int elempack, std::shared_ptr<CudaAllocator> allocator = 0);
+    // copy from host
+    CudaMat(const Mat& m, std::shared_ptr<ncnn::CudaAllocator> _allocator);
+    // copy from device
+    CudaMat(const CudaMat& m);
+    // external vec
+    CudaMat(int w, void* data, size_t elemsize = 4u, std::shared_ptr<CudaAllocator> allocator = 0);
+    // external image
+    CudaMat(int w, int h, void* data, size_t elemsize = 4u, std::shared_ptr<CudaAllocator> allocator = 0);
+    // external dim
+    CudaMat(int w, int h, int c, void* data, size_t elemsize = 4u, std::shared_ptr<CudaAllocator> allocator = 0);
+    // external packed vec
+    CudaMat(int w, void* data, size_t elemsize, int elempack, std::shared_ptr<CudaAllocator> allocator = 0);
+    // external packed image
+    CudaMat(int w, int h, void* data, size_t elemsize, int elempack, std::shared_ptr<CudaAllocator> allocator = 0);
+    // external packed dim
+    CudaMat(int w, int h, int c, void* data, size_t elemsize, int elempack, std::shared_ptr<CudaAllocator> allocator = 0);
+    // release
+    ~CudaMat();
+
+    // assign
+    CudaMat& operator=(const CudaMat& m);
+
+    // set all
+    void fill(float v);
+    void fill(int v);
+
+    template<typename T>
+    void fill(T v);
+    // deep copy
+    CudaMat clone(std::shared_ptr<CudaAllocator> allocator = 0) const;
+    // reshape vec
+    CudaMat reshape(int w, std::shared_ptr<CudaAllocator> allocator = 0) const;
+    // reshape image
+    CudaMat reshape(int w, int h,std::shared_ptr<CudaAllocator> allocator = 0) const;
+    // reshape dim
+    CudaMat reshape(int w, int h, int c, std::shared_ptr<CudaAllocator> allocator = 0) const;
+    // allocate vec
+    void create(int w, size_t elemsize = 4u, std::shared_ptr<CudaAllocator> allocator = 0);
+    // allocate image
+    void create(int w, int h, size_t elemsize = 4u, std::shared_ptr<CudaAllocator> allocator = 0);
+    // allocate dim
+    void create(int w, int h, int c, size_t elemsize = 4u, std::shared_ptr<CudaAllocator> allocator = 0);
+    // allocate packed vec
+    void create(int w, size_t elemsize, int elempack, std::shared_ptr<CudaAllocator> allocator = 0);
+    // allocate packed image
+    void create(int w, int h, size_t elemsize, int elempack, std::shared_ptr<CudaAllocator> allocator = 0);
+    // allocate packed dim
+    void create(int w, int h, int c, size_t elemsize, int elempack, std::shared_ptr<CudaAllocator> allocator = 0);
+    // allocate like
+    void create_like(const Mat& m, std::shared_ptr<CudaAllocator> allocator = 0);
+
+    // allocate like
+    void create_like(const CudaMat& m, std::shared_ptr<CudaAllocator> allocator = 0);
+
+    // refcount++
+    void addref();
+    // refcount--
+    void release();
+
+    bool empty() const;
+    size_t total() const;
+
+    // bits per element
+    int elembits() const;
+
+    // shape only
+    Mat shape() const;
+
+    // data reference
+    CudaMat channel(int c);
+    const CudaMat channel(int c) const;
+    float* row(int y);
+    const float* row(int y) const;
+    template<typename T>
+    T* row(int y);
+    template<typename T>
+    const T* row(int y) const;
+
+
+    // range reference
+    CudaMat channel_range(int c, int channels);
+    const CudaMat channel_range(int c, int channels) const;
+    CudaMat row_range(int y, int rows);
+    const CudaMat row_range(int y, int rows) const;
+    CudaMat range(int x, int n);
+    const CudaMat range(int x, int n) const;
+
+    // access raw data
+    template<typename T>
+    operator T*();
+    template<typename T>
+    operator const T*() const;
+
+    // convenient access float vec element
+    float& operator[](size_t i);
+    const float& operator[](size_t i) const;
+
+    void* get_raw_data()
+    {
+        return data;
+    }
+
+#if NCNN_PIXEL
+    enum PixelType
+    {
+        PIXEL_CONVERT_SHIFT = 16,
+        PIXEL_FORMAT_MASK = 0x0000ffff,
+        PIXEL_CONVERT_MASK = 0xffff0000,
+
+        PIXEL_RGB = 1,
+        PIXEL_BGR = 2,
+        PIXEL_GRAY = 3,
+        PIXEL_RGBA = 4,
+        PIXEL_BGRA = 5,
+
+        PIXEL_RGB2BGR = PIXEL_RGB | (PIXEL_BGR << PIXEL_CONVERT_SHIFT),
+        PIXEL_RGB2GRAY = PIXEL_RGB | (PIXEL_GRAY << PIXEL_CONVERT_SHIFT),
+        PIXEL_RGB2RGBA = PIXEL_RGB | (PIXEL_RGBA << PIXEL_CONVERT_SHIFT),
+        PIXEL_RGB2BGRA = PIXEL_RGB | (PIXEL_BGRA << PIXEL_CONVERT_SHIFT),
+
+        PIXEL_BGR2RGB = PIXEL_BGR | (PIXEL_RGB << PIXEL_CONVERT_SHIFT),
+        PIXEL_BGR2GRAY = PIXEL_BGR | (PIXEL_GRAY << PIXEL_CONVERT_SHIFT),
+        PIXEL_BGR2RGBA = PIXEL_BGR | (PIXEL_RGBA << PIXEL_CONVERT_SHIFT),
+        PIXEL_BGR2BGRA = PIXEL_BGR | (PIXEL_BGRA << PIXEL_CONVERT_SHIFT),
+
+        PIXEL_GRAY2RGB = PIXEL_GRAY | (PIXEL_RGB << PIXEL_CONVERT_SHIFT),
+        PIXEL_GRAY2BGR = PIXEL_GRAY | (PIXEL_BGR << PIXEL_CONVERT_SHIFT),
+        PIXEL_GRAY2RGBA = PIXEL_GRAY | (PIXEL_RGBA << PIXEL_CONVERT_SHIFT),
+        PIXEL_GRAY2BGRA = PIXEL_GRAY | (PIXEL_BGRA << PIXEL_CONVERT_SHIFT),
+
+        PIXEL_RGBA2RGB = PIXEL_RGBA | (PIXEL_RGB << PIXEL_CONVERT_SHIFT),
+        PIXEL_RGBA2BGR = PIXEL_RGBA | (PIXEL_BGR << PIXEL_CONVERT_SHIFT),
+        PIXEL_RGBA2GRAY = PIXEL_RGBA | (PIXEL_GRAY << PIXEL_CONVERT_SHIFT),
+        PIXEL_RGBA2BGRA = PIXEL_RGBA | (PIXEL_BGRA << PIXEL_CONVERT_SHIFT),
+
+        PIXEL_BGRA2RGB = PIXEL_BGRA | (PIXEL_RGB << PIXEL_CONVERT_SHIFT),
+        PIXEL_BGRA2BGR = PIXEL_BGRA | (PIXEL_BGR << PIXEL_CONVERT_SHIFT),
+        PIXEL_BGRA2GRAY = PIXEL_BGRA | (PIXEL_GRAY << PIXEL_CONVERT_SHIFT),
+        PIXEL_BGRA2RGBA = PIXEL_BGRA | (PIXEL_RGBA << PIXEL_CONVERT_SHIFT),
+    };
+    // convenient construct from pixel data
+    static CudaMat from_pixels(const unsigned char* pixels, int type, int w, int h, Allocator* allocator = 0);
+    // convenient construct from pixel data with stride(bytes-per-row) parameter
+    static CudaMat from_pixels(const unsigned char* pixels, int type, int w, int h, int stride, Allocator* allocator = 0);
+    // convenient construct from pixel data and resize to specific size
+    static CudaMat from_pixels_resize(const unsigned char* pixels, int type, int w, int h, int target_width, int target_height, Allocator* allocator = 0);
+    // convenient construct from pixel data and resize to specific size with stride(bytes-per-row) parameter
+    static CudaMat from_pixels_resize(const unsigned char* pixels, int type, int w, int h, int stride, int target_width, int target_height, Allocator* allocator = 0);
+
+    // convenient export to pixel data
+    void to_pixels(unsigned char* pixels, int type) const;
+    // convenient export to pixel data with stride(bytes-per-row) parameter
+    void to_pixels(unsigned char* pixels, int type, int stride) const;
+    // convenient export to pixel data and resize to specific size
+    void to_pixels_resize(unsigned char* pixels, int type, int target_width, int target_height) const;
+    // convenient export to pixel data and resize to specific size with stride(bytes-per-row) parameter
+    void to_pixels_resize(unsigned char* pixels, int type, int target_width, int target_height, int target_stride) const;
+#endif // NCNN_PIXEL
+
+    // substract channel-wise mean values, then multiply by normalize values, pass 0 to skip
+    void substract_mean_normalize(const float* mean_vals, const float* norm_vals);
+
+    // convenient construct from half precisoin floating point data
+    static CudaMat from_float16(const unsigned short* data, int size);
+
+
+    // pointer to the data on device
+    void* data{nullptr};
+
+    // pointer to the reference counter
+    // when points to user-allocated data, the pointer is NULL
+    std::shared_ptr<int> refcount;
+
+    // element size in bytes
+    // 4 = float32/int32
+    // 2 = float16
+    // 1 = int8/uint8
+    // 0 = empty
+    size_t elemsize{0};
+
+    // packed count inside element
+    // c/1-h-w-1  h/1-w-1  w/1-1  scalar
+    // c/4-h-w-4  h/4-w-4  w/4-4  sse/neon
+    // c/8-h-w-8  h/8-w-8  w/8-8  avx/fp16
+    int elempack{0};
+
+    // the allocator
+    std::shared_ptr<ncnn::CudaAllocator> allocator{};
+
+    // the dimension rank
+    int dims{-1};
+
+    int w{-1};
+    int h{-1};
+    int c{-1};
+
+    size_t cstep{0};
+
+};
+#endif
 
 #if NCNN_VULKAN
 
@@ -1272,6 +1510,30 @@ inline void Mat::create_like(const Mat& m, Allocator* _allocator)
         create(m.w, m.h, m.c, m.elemsize, m.elempack, _allocator);
 }
 
+#if NCNN_CUDA
+inline void Mat::create_like(const CudaMat& m, Allocator* _allocator)
+{
+    int _dims = m.dims;
+    if (_dims == 1)
+        create(m.w, m.elemsize, m.elempack, _allocator);
+    if (_dims == 2)
+        create(m.w, m.h, m.elemsize, m.elempack, _allocator);
+    if (_dims == 3)
+        create(m.w, m.h, m.c, m.elemsize, m.elempack, _allocator);
+}
+
+inline Mat& Mat::operator=(const CudaMat& m)
+{
+    release();
+
+    create_like(m, nullptr);
+
+    checkCudaErrors(cudaMemcpy(data, m.data, total() * elemsize, cudaMemcpyDeviceToHost));
+
+    return *this;
+}
+#endif // NCNN_VULKAN
+
 #if NCNN_VULKAN
 inline void Mat::create_like(const VkMat& m, Allocator* _allocator)
 {
@@ -2256,6 +2518,165 @@ inline VkImageView VkImageMat::imageview() const
 }
 
 #endif // NCNN_VULKAN
+
+#ifdef NCNN_CUDA
+
+inline CudaMat::CudaMat()
+    : data(0), refcount(0), elemsize(0), elempack(0), allocator(0), dims(0), w(0), h(0), c(0), cstep(0)
+{
+
+}
+
+inline CudaMat::~CudaMat()
+{
+    release();
+}
+
+inline size_t CudaMat::total() const
+{
+    return cstep * c;
+}
+
+// copy from host
+inline CudaMat::CudaMat(const Mat& m, std::shared_ptr<ncnn::CudaAllocator> _allocator)
+    : refcount(0), elemsize(m.elemsize), elempack(m.elempack), dims(m.dims), w(m.w), h(m.h), c(m.c), cstep(m.cstep)
+{
+    assert(_allocator.use_count() > 0);
+
+    allocator = _allocator;
+
+    if (total() > 0)
+    {
+        size_t totalsize = alignSize(total() * elemsize, 4);
+        data = allocator->fastMalloc(totalsize);
+
+        checkCudaErrors(cudaMemcpy(data, m.data, total() * elemsize, cudaMemcpyHostToDevice));
+
+        refcount = std::make_shared<int>(1);
+    }
+}
+
+
+inline void CudaMat::release()
+{
+    if (refcount && NCNN_XADD(refcount.get(), -1) == 1)
+    {
+        allocator->fastFree(data);
+    }
+
+    data = 0;
+
+    elemsize = 0;
+    elempack = 0;
+
+    dims = 0;
+    w = 0;
+    h = 0;
+    c = 0;
+
+    cstep = 0;
+
+    refcount = 0;
+}
+
+inline void CudaMat::create(int _w, size_t _elemsize, int _elempack, std::shared_ptr<CudaAllocator> _allocator)
+{
+    if (dims == 1 && w == _w && elemsize == _elemsize && elempack == _elempack && allocator == _allocator)
+        return;
+
+    release();
+
+    assert(_allocator.use_count() > 0);
+
+    elemsize = _elemsize;
+    elempack = _elempack;
+    allocator = _allocator;
+
+    dims = 1;
+    w = _w;
+    h = 1;
+    c = 1;
+
+    cstep = w;
+
+    if (total() > 0)
+    {
+        size_t totalsize = alignSize(total() * elemsize, 4);
+        data = allocator->fastMalloc(totalsize);
+        refcount = std::make_shared<int>(1);
+    }
+}
+
+
+inline void CudaMat::create(int _w, int _h, size_t _elemsize, int _elempack, std::shared_ptr<CudaAllocator> _allocator)
+{
+    if (dims == 2 && w == _w && h == _h && elemsize == _elemsize && elempack == _elempack && allocator == _allocator)
+        return;
+
+    release();
+
+    assert(_allocator.use_count() > 0);
+
+    elemsize = _elemsize;
+    elempack = _elempack;
+    allocator = _allocator;
+
+    dims = 2;
+    w = _w;
+    h = _h;
+    c = 1;
+
+    cstep = w * h;
+
+    if (total() > 0)
+    {
+        size_t totalsize = alignSize(total() * elemsize, 4);
+        data = allocator->fastMalloc(totalsize);
+        refcount = std::make_shared<int>(1);
+    }
+}
+
+
+inline void CudaMat::create(int _w, int _h, int _c, size_t _elemsize, int _elempack, std::shared_ptr<CudaAllocator> _allocator)
+{
+    if (dims == 3 && w == _w && h == _h && c == _c && elemsize == _elemsize && elempack == _elempack && allocator == _allocator)
+        return;
+
+    release();
+
+    assert(_allocator.use_count() > 0);
+
+    elemsize = _elemsize;
+    elempack = _elempack;
+    allocator = _allocator;
+
+    dims = 3;
+    w = _w;
+    h = _h;
+    c = _c;
+
+    cstep = alignSize(w * h * elemsize, 16) / elemsize;
+
+    if (total() > 0)
+    {
+        size_t totalsize = alignSize(total() * elemsize, 4);
+        data = allocator->fastMalloc(totalsize);
+        refcount = std::make_shared<int>(1);
+    }
+}
+
+inline void CudaMat::create_like(const CudaMat& m, std::shared_ptr<CudaAllocator> _allocator)
+{
+    int _dims = m.dims;
+    if (_dims == 1)
+        create(m.w, m.elemsize, m.elempack, _allocator);
+    if (_dims == 2)
+        create(m.w, m.h, m.elemsize, m.elempack, _allocator);
+    if (_dims == 3)
+        create(m.w, m.h, m.c, m.elemsize, m.elempack, _allocator);
+}
+
+#endif
 
 } // namespace ncnn
 

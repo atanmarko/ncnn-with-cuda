@@ -200,6 +200,28 @@ private:
     std::list<std::pair<size_t, void*> > payouts;
 };
 
+#if NCNN_CUDA
+
+class CudaDevice;
+
+class CudaAllocator  : public Allocator
+{
+public:
+    CudaAllocator(const CudaDevice* _cudev);
+
+    virtual ~CudaAllocator() {
+
+    }
+
+    virtual void* fastMalloc(size_t size);
+    virtual void fastFree(void* ptr);
+
+public:
+    const CudaDevice* cudev;
+};
+
+#endif
+
 #if NCNN_VULKAN
 
 class VulkanDevice;

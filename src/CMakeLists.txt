@@ -155,6 +155,7 @@ configure_file(layer_type_enum.h.in ${CMAKE_CURRENT_BINARY_DIR}/layer_type_enum.
 configure_file(layer_shader_registry.h.in ${CMAKE_CURRENT_BINARY_DIR}/layer_shader_registry.h)
 configure_file(layer_shader_spv_data.h.in ${CMAKE_CURRENT_BINARY_DIR}/layer_shader_spv_data.h)
 configure_file(layer_shader_type_enum.h.in ${CMAKE_CURRENT_BINARY_DIR}/layer_shader_type_enum.h)
+configure_file(layer_registry_cuda.h.in ${CMAKE_CURRENT_BINARY_DIR}/layer_registry_cuda.h)
 
 add_library(ncnn STATIC ${ncnn_SRCS})
 set_target_properties(ncnn PROPERTIES DEBUG_POSTFIX "d")
@@ -236,6 +237,22 @@ if(NCNN_VULKAN)
 
     target_include_directories(ncnn PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../>)
     target_link_libraries(ncnn PRIVATE glslang SPIRV)
+endif()
+
+if(NCNN_CUDA)
+    CUDA_ADD_LIBRARY(ncnn_cuda_lib STATIC "${ncnn_SRCS_CUDA}" )
+    add_compile_definitions(NCNN_CUDA=1)
+    set_target_properties(ncnn_cuda_lib
+            PROPERTIES
+            CUDA_SEPARABLE_COMPILATION ON
+            LINKER_LANGUAGE CXX)
+
+    target_include_directories(ncnn_cuda_lib
+            PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+
+    target_link_libraries(ncnn PUBLIC "${CUDA_LIBRARIES}")
+    target_link_libraries(ncnn PRIVATE "ncnn_cuda_lib")
 endif()
 
 if(ANDROID_NDK)
@@ -324,6 +341,11 @@ endif()
 add_dependencies(ncnn ncnn-generate-spirv)
 
 if(NCNN_INSTALL_SDK)
+
+if (NCNN_CUDA)
+    install(TARGETS ncnn_cuda_lib EXPORT ncnn_cuda_lib_targets ARCHIVE DESTINATION lib)
+endif()
+
     install(TARGETS ncnn EXPORT ncnn ARCHIVE DESTINATION lib)
     install(FILES
         allocator.h
@@ -352,6 +374,16 @@ if(NCNN_INSTALL_SDK)
         ${CMAKE_CURRENT_BINARY_DIR}/platform.h
         DESTINATION include/ncnn
     )
+
+if (NCNN_CUDA)
+    install(FILES
+            cuda_util.h
+            DESTINATION include/ncnn
+            )
+    install(EXPORT ncnn_cuda_lib_targets
+            DESTINATION lib/cmake/ncnn)
+endif ()
+
     install(EXPORT ncnn DESTINATION lib/cmake/ncnn)
     configure_file(${CMAKE_CURRENT_LIST_DIR}/../cmake/ncnnConfig.cmake.in ncnnConfig.cmake @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ncnnConfig.cmake DESTINATION lib/cmake/ncnn)

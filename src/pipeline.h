@@ -23,6 +23,10 @@
 #include <vulkan/vulkan.h>
 #endif // NCNN_VULKAN
 
+#if NCNN_CUDA
+#include "gpu.h"
+#endif
+
 namespace ncnn {
 
 #if NCNN_VULKAN

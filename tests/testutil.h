@@ -22,11 +22,17 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <chrono>
 
 #if NCNN_VULKAN
 #include "command.h"
 #include "gpu.h"
 #endif // NCNN_VULKAN
+
+#if NCNN_CUDA
+#include <memory>
+#include "gpu.h"
+#endif
 
 static struct prng_rand_t g_prng_rand_state;
 #define SRAND(seed) prng_srand(seed, &g_prng_rand_state)
@@ -562,6 +568,334 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
 }
 #endif // NCNN_VULKAN
 
+
+#if NCNN_CUDA
+template<typename T>
+int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::Mat>& weights, const ncnn::Option& _opt, const ncnn::Mat& a, ncnn::Mat& d, const ncnn::Mat& top_shape, void (*func)(T*))
+{
+    ncnn::Layer* op = ncnn::create_layer(typeindex);
+
+    if (!op->support_cuda)
+    {
+        delete op;
+        return 233;
+    }
+
+    ncnn::CudaDevice* cudev = ncnn::get_cuda_gpu_device(0);
+
+    op->cudev = cudev;
+
+    if (func)
+    {
+        (*func)((T*)op);
+    }
+
+    if (top_shape.dims)
+    {
+        op->bottom_shapes.resize(1);
+        op->top_shapes.resize(1);
+        op->bottom_shapes[0] = a;
+        op->top_shapes[0] = top_shape;
+    }
+
+    op->load_param(pd);
+
+    ncnn::ModelBinFromMatArray mb(weights.data());
+
+    op->load_model(mb);
+
+    if (op->use_int8_inference)
+    {
+        // NOTE skip int8 on gpu
+        delete op;
+        return 233;
+    }
+
+    ncnn::Option opt = _opt;
+    opt.num_threads = 1;
+    opt.use_cuda_compute = true;
+
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator{new ncnn::CudaAllocator(cudev)};
+
+    opt.blob_cuda_allocator = cuda_allocator;
+    opt.workspace_cuda_allocator = cuda_allocator;
+
+    if (!op->support_packing) opt.use_packing_layout = false;
+    if (!op->support_bf16_storage) opt.use_bf16_storage = false;
+    if (!op->support_image_storage) opt.use_image_storage = false;
+    if (!op->support_weight_fp16_storage) opt.use_weight_fp16_storage = false;
+
+    opt.use_fp16_packed = false;
+    opt.use_fp16_storage = false;
+    opt.use_fp16_arithmetic = false;
+
+    // FIXME fp16a may produce large error
+    opt.use_fp16_arithmetic = false;
+
+    op->create_pipeline(opt);
+
+
+    ncnn::Mat a4;
+    if (opt.use_packing_layout)
+    {
+        // resolve dst_elempack
+        int dims = a.dims;
+        int elemcount = 0;
+        if (dims == 1) elemcount = a.elempack * a.w;
+        if (dims == 2) elemcount = a.elempack * a.h;
+        if (dims == 3) elemcount = a.elempack * a.c;
+
+        int dst_elempack = 1;
+
+#if NCNN_AVX2
+        if (elemcount % 8 == 0)
+            dst_elempack = 8;
+#elif NCNN_ARM82
+        if (elemcount % 8 == 0 && opt.use_fp16_arithmetic)
+            dst_elempack = 8;
+        else if (elemcount % 4 == 0)
+            dst_elempack = 4;
+#else
+        if (elemcount % 4 == 0)
+            dst_elempack = 4;
+#endif
+
+        ncnn::convert_packing(a, a4, dst_elempack, opt);
+    }
+    else
+    {
+        a4 = a;
+    }
+
+    if (opt.use_fp16_storage)
+    {
+        ncnn::Mat a_fp16;
+        ncnn::cast_float32_to_float16(a4, a_fp16, opt);
+        a4 = a_fp16;
+    }
+    else if (opt.use_bf16_storage)
+    {
+        ncnn::Mat a_bf16;
+        ncnn::cast_float32_to_bfloat16(a4, a_bf16, opt);
+        a4 = a_bf16;
+    }
+
+    ncnn::CudaMat a_gpu{a4, cuda_allocator};
+    ncnn::CudaMat d_gpu{};
+    d_gpu.create_like(a_gpu, cuda_allocator);
+
+    if (op->support_inplace)
+    {
+        op->forward_inplace(a_gpu, opt);
+        d = a_gpu;
+    }
+    else
+    {
+        op->forward(a_gpu, d_gpu, opt);
+        d = d_gpu;
+    }
+
+
+
+    if (opt.use_fp16_storage)
+    {
+        ncnn::Mat c_fp32;
+        ncnn::cast_float16_to_float32(d, c_fp32, opt);
+        d = c_fp32;
+    }
+    else if (opt.use_bf16_storage)
+    {
+        ncnn::Mat c_fp32;
+        ncnn::cast_bfloat16_to_float32(d, c_fp32, opt);
+        d = c_fp32;
+    }
+
+    op->destroy_pipeline(opt);
+
+
+    delete op;
+
+
+    return 0;
+}
+
+template<typename T>
+int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::Mat>& weights, const ncnn::Option& _opt, const std::vector<ncnn::Mat>& a,
+                   int top_blob_count, std::vector<ncnn::Mat>& d, const std::vector<ncnn::Mat>& top_shapes, void (*func)(T*))
+{
+    ncnn::Layer* op = ncnn::create_layer(typeindex);
+
+    if (!op->support_cuda)
+    {
+        delete op;
+        return 233;
+    }
+
+    ncnn::CudaDevice* cudev = ncnn::get_cuda_gpu_device(0);
+    op->cudev = cudev;
+
+    if (func)
+    {
+        (*func)((T*)op);
+    }
+
+    if (!top_shapes.empty())
+    {
+        op->bottom_shapes = a;
+        op->top_shapes = top_shapes;
+    }
+
+    op->load_param(pd);
+
+    if (op->one_blob_only && a.size() != 1)
+    {
+        fprintf(stderr, "layer with one_blob_only but consume multiple inputs\n");
+        delete op;
+        return -1;
+    }
+
+    ncnn::ModelBinFromMatArray mb(weights.data());
+
+    op->load_model(mb);
+
+    if (op->use_int8_inference)
+    {
+        // NOTE skip int8 on gpu
+        delete op;
+        return 233;
+    }
+
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator{new ncnn::CudaAllocator(cudev)};
+
+    ncnn::Option opt = _opt;
+    opt.num_threads = 1;
+    opt.use_cuda_compute = true;
+    opt.blob_cuda_allocator = cuda_allocator;
+    opt.workspace_cuda_allocator = cuda_allocator;
+
+    if (!op->support_packing) opt.use_packing_layout = false;
+    if (!op->support_bf16_storage) opt.use_bf16_storage = false;
+    if (!op->support_image_storage) opt.use_image_storage = false;
+    if (!op->support_weight_fp16_storage) opt.use_weight_fp16_storage = false;
+
+#if __APPLE__
+    opt.use_image_storage = false;
+#endif
+
+
+//    if (!cudev->info.support_fp16_packed) opt.use_fp16_packed = false;
+//    if (!cudev->info.support_fp16_storage) opt.use_fp16_storage = false;
+//    if (!cudev->info.support_fp16_arithmetic) opt.use_fp16_arithmetic = false;
+
+    // FIXME fp16a may produce large error
+    opt.use_fp16_arithmetic = false;
+
+    op->create_pipeline(opt);
+    std::vector<ncnn::Mat> a4(a.size());
+    if (opt.use_packing_layout)
+    {
+        for (size_t i = 0; i < a.size(); i++)
+        {
+            // resolve dst_elempack
+            int dims = a[i].dims;
+            int elemcount = 0;
+            if (dims == 1) elemcount = a[i].elempack * a[i].w;
+            if (dims == 2) elemcount = a[i].elempack * a[i].h;
+            if (dims == 3) elemcount = a[i].elempack * a[i].c;
+
+            int dst_elempack = 1;
+
+#if NCNN_AVX2
+            if (elemcount % 8 == 0)
+                dst_elempack = 8;
+#elif NCNN_ARM82
+            if (elemcount % 8 == 0 && opt.use_fp16_arithmetic)
+                dst_elempack = 8;
+            else if (elemcount % 4 == 0)
+                dst_elempack = 4;
+#else
+            if (elemcount % 4 == 0)
+                dst_elempack = 4;
+#endif
+
+            ncnn::convert_packing(a[i], a4[i], dst_elempack, opt);
+        }
+    }
+    else
+    {
+        a4 = a;
+    }
+
+    if (opt.use_fp16_storage)
+    {
+        for (size_t i = 0; i < a4.size(); i++)
+        {
+            ncnn::Mat a_fp16;
+            ncnn::cast_float32_to_float16(a4[i], a_fp16, opt);
+            a4[i] = a_fp16;
+        }
+    }
+    else if (opt.use_bf16_storage)
+    {
+        for (size_t i = 0; i < a4.size(); i++)
+        {
+            ncnn::Mat a_bf16;
+            ncnn::cast_float32_to_bfloat16(a4[i], a_bf16, opt);
+            a4[i] = a_bf16;
+        }
+    }
+
+    d.resize(top_blob_count);
+
+    std::vector<ncnn::CudaMat> a_gpu(a.size());
+    for (size_t i = 0; i < a4.size(); i++)
+    {
+        a_gpu[i] = ncnn::CudaMat{a4[i], cuda_allocator};
+    }
+
+    std::vector<ncnn::CudaMat> d_gpu(a.size());
+
+    if (op->support_inplace)
+    {
+        for (size_t i = 0; i < a4.size(); i++)
+        {
+            d[i] = a4[i].clone();
+        }
+
+        op->forward_inplace(d, opt);
+    }
+    else
+    {
+        op->forward(a4, d, opt);
+    }
+
+    if (opt.use_fp16_storage)
+    {
+        for (size_t i = 0; i < d.size(); i++)
+        {
+            ncnn::Mat c_fp32;
+            ncnn::cast_float16_to_float32(d[i], c_fp32, opt);
+            d[i] = c_fp32;
+        }
+    }
+    else if (opt.use_bf16_storage)
+    {
+        for (size_t i = 0; i < d.size(); i++)
+        {
+            ncnn::Mat c_fp32;
+            ncnn::cast_bfloat16_to_float32(d[i], c_fp32, opt);
+            d[i] = c_fp32;
+        }
+    }
+
+    op->destroy_pipeline(opt);
+
+    delete op;
+
+    return 0;
+}
+#endif // NCNN_VULKAN
+
 template<typename T>
 int test_layer(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::Mat>& weights, const ncnn::Option& _opt, const std::vector<ncnn::Mat>& a, int top_blob_count, const std::vector<ncnn::Mat>& top_shapes = std::vector<ncnn::Mat>(), float epsilon = 0.001, void (*func)(T*) = 0)
 {
@@ -597,6 +931,31 @@ int test_layer(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn:
             return -1;
         }
     }
+
+#if NCNN_CUDA
+    // gpu
+    {
+        std::vector<ncnn::Mat> d;
+        int ret = test_layer_gpu(typeindex, pd, weights, _opt, a, top_blob_count, d, std::vector<ncnn::Mat>(), func);
+        if (ret != 233 && (ret != 0 || CompareMat(b, d, epsilon) != 0))
+        {
+            fprintf(stderr, "test_layer_gpu failed\n");
+            return -1;
+        }
+    }
+
+    // gpu shape hint
+    {
+        std::vector<ncnn::Mat> d;
+        int ret = test_layer_gpu(typeindex, pd, weights, _opt, a, top_blob_count, d, b, func);
+        if (ret != 233 && (ret != 0 || CompareMat(b, d, epsilon) != 0))
+        {
+            fprintf(stderr, "test_layer_gpu failed with shape hint\n");
+            return -1;
+        }
+    }
+#endif // NCNN_CUDA
+
 
 #if NCNN_VULKAN
     // gpu
@@ -954,23 +1313,29 @@ int test_layer(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn:
     // naive
     ncnn::Mat b;
     {
+        auto begin = std::chrono::high_resolution_clock::now();
         int ret = test_layer_naive(typeindex, pd, weights, a, b, func);
         if (ret != 0)
         {
             fprintf(stderr, "test_layer_naive failed\n");
             return -1;
         }
+        auto end = std::chrono::high_resolution_clock::now();
+        std::cout << "test_layer_naive execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
     }
 
     // cpu
     {
         ncnn::Mat c;
+        auto begin = std::chrono::high_resolution_clock::now();
         int ret = test_layer_cpu(typeindex, pd, weights, _opt, a, c, ncnn::Mat(), func);
         if (ret != 0 || CompareMat(b, c, epsilon) != 0)
         {
             fprintf(stderr, "test_layer_cpu failed\n");
             return -1;
         }
+        auto end = std::chrono::high_resolution_clock::now();
+        std::cout << "test_layer_cpu execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
     }
 
     // cpu shape hint
@@ -983,6 +1348,36 @@ int test_layer(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn:
             return -1;
         }
     }
+
+#if NCNN_CUDA
+    // gpu
+    {
+        ncnn::Mat d;
+        auto begin = std::chrono::high_resolution_clock::now();
+        int ret = test_layer_gpu(typeindex, pd, weights, _opt, a, d, ncnn::Mat(), func);
+        if (ret != 233 && (ret != 0 || CompareMat(b, d, epsilon) != 0))
+        {
+            fprintf(stderr, "test_layer_gpu failed\n");
+            return -1;
+        }
+        auto end = std::chrono::high_resolution_clock::now();
+        std::cout << "test_layer_cuda execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
+    }
+
+    // gpu shape hint
+    {
+        ncnn::Mat d;
+        auto begin = std::chrono::high_resolution_clock::now();
+        int ret = test_layer_gpu(typeindex, pd, weights, _opt, a, d, b, func);
+        if (ret != 233 && (ret != 0 || CompareMat(b, d, epsilon) != 0))
+        {
+            fprintf(stderr, "test_layer_gpu failed with shape hint\n");
+            return -1;
+        }
+        auto end = std::chrono::high_resolution_clock::now();
+        std::cout << "test_layer_gpu shape hint execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
+    }
+#endif // NCNN_CUDA
 
 #if NCNN_VULKAN
     // gpu

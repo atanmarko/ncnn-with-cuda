@@ -17,7 +17,13 @@
 
 #include "platform.h"
 
+#include <memory>
+
 namespace ncnn {
+
+#if NCNN_CUDA
+class CudaAllocator;
+#endif
 
 #if NCNN_VULKAN
 class VkAllocator;
@@ -46,6 +52,15 @@ public:
 
     // workspace memory allocator
     Allocator* workspace_allocator;
+
+#if NCNN_CUDA
+    // blob memory allocator
+    std::shared_ptr<ncnn::CudaAllocator> blob_cuda_allocator;
+
+    // workspace memory allocator
+    std::shared_ptr<ncnn::CudaAllocator> workspace_cuda_allocator;
+
+#endif // NCNN_CUDA
 
 #if NCNN_VULKAN
     // blob memory allocator
@@ -86,6 +101,9 @@ public:
 
     // enable vulkan compute
     bool use_vulkan_compute;
+
+    // enable cuda compute
+    bool use_cuda_compute;
 
     // enable options for gpu inference
     bool use_fp16_packed;

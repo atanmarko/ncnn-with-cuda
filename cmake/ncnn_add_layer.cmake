@@ -29,6 +29,17 @@ macro(ncnn_add_layer class)
             set(WITH_LAYER_${name}_vulkan 1)
             list(APPEND ncnn_SRCS ${LAYER_VULKAN_SRC})
         endif()
+
+        set(LAYER_CUDA_SRC ${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.cpp)
+        if(NCNN_CUDA AND EXISTS ${LAYER_CUDA_SRC})
+            set(WITH_LAYER_${name}_cuda 1)
+            list(APPEND ncnn_SRCS ${LAYER_CUDA_SRC})
+        endif()
+        set(LAYER_CUDA_GPU_SRC ${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.cu)
+        if(NCNN_CUDA AND EXISTS ${LAYER_CUDA_GPU_SRC})
+            list(APPEND ncnn_SRCS_CUDA ${LAYER_CUDA_GPU_SRC})
+        endif()
+
     endif()
 
     # generate layer_declaration and layer_registry file
@@ -66,6 +77,42 @@ macro(ncnn_add_layer class)
         source_group ("sources\\\\layers\\\\vulkan" FILES "${CMAKE_CURRENT_SOURCE_DIR}/layer/vulkan/${name}_vulkan.cpp")
     endif()
 
+    if (NCNN_CUDA)
+
+        set(NCNN_CUDA_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.h)
+        set(NCNN_CUDA_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.cpp)
+
+        if (WITH_LAYER_${name}_cuda  AND EXISTS ${NCNN_CUDA_HEADER} AND EXISTS ${NCNN_CUDA_SOURCE})
+            # generate layer_declaration and layer_registry_cuda file
+
+
+            set(layer_declaration_class_cuda "class ${class}_final_cuda:  virtual public ${class}, virtual public ${class}_cuda")
+            set(create_pipeline_content_cuda "        { int ret = ${class}_cuda::create_pipeline(opt); if (ret) return ret; }\n")
+            set(destroy_pipeline_content_cuda "        { int ret = ${class}_cuda::destroy_pipeline(opt); if (ret) return ret; }\n")
+            set(forward_inplace_cuda "        { int ret = ${class}_cuda::forward_inplace(bottom_top_blob, opt); if (ret) return ret; }\n")
+            #set(forward_inplace_int8_cuda "        { int ret = ${class}_cuda::forward_inplace_int8(bottom_top_blob, opt); if (ret) return ret; }\n")
+
+
+
+            set(layer_declaration "${layer_declaration}#include \"layer/cuda/${name}_cuda.h\"\n")
+            set(layer_declaration "${layer_declaration}namespace ncnn {\n${layer_declaration_class_cuda}\n{\n")
+            set(layer_declaration "${layer_declaration}public:\n")
+            set(layer_declaration "${layer_declaration}    virtual int create_pipeline(const Option& opt) {\n${create_pipeline_content_cuda}        return 0;\n    }\n")
+            set(layer_declaration "${layer_declaration}    virtual int destroy_pipeline(const Option& opt) {\n${destroy_pipeline_content_cuda}        return 0;\n    }\n")
+#            set(layer_declaration "${layer_declaration}    virtual int forward_inplace(Mat& bottom_top_blob, const Option& opt) {\n${forward_inplace_cuda} return 0; \n    }\n")
+#            set(layer_declaration "${layer_declaration}    virtual int forward_inplace_int8(Mat& bottom_top_blob, const Option& opt) {\n${forward_inplace_int8_cuda} return 0; \n    }\n")
+            set(layer_declaration "${layer_declaration}};\n")
+            set(layer_declaration "${layer_declaration}DEFINE_LAYER_CREATOR(${class}_final_cuda)\n} // namespace ncnn\n\n")
+
+            set(layer_registry_cuda "${layer_registry_cuda}#if NCNN_STRING\n{\"${class}\",${class}_final_cuda_layer_creator},\n#else\n{${class}_final_cuda_layer_creator},\n#endif\n")
+
+        else()
+            # no cuda optimized version
+            set(layer_registry_cuda "${layer_registry_cuda}#if NCNN_STRING\n{\"${class}\",0},\n#else\n{0},\n#endif\n")
+        endif()
+
+    endif ()
+
     if(WITH_LAYER_${name})
         set(layer_declaration "${layer_declaration}namespace ncnn {\n${layer_declaration_class}\n{\n")
         set(layer_declaration "${layer_declaration}public:\n")
@@ -80,7 +127,6 @@ macro(ncnn_add_layer class)
     else()
         set(layer_registry "${layer_registry}#if NCNN_STRING\n{\"${class}\",0},\n#else\n{0},\n#endif\n")
     endif()
-
 
     if(NCNN_RUNTIME_CPU AND NCNN_AVX2 AND NCNN_TARGET_ARCH STREQUAL "x86")
         # enable avx2

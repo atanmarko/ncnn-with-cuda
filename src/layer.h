@@ -30,6 +30,10 @@
 #include <vulkan/vulkan.h>
 #endif // NCNN_VULKAN
 
+#if NCNN_CUDA
+#include "pipeline.h"
+#endif
+
 namespace ncnn {
 
 class Layer
@@ -82,6 +86,9 @@ public:
     bool use_int8_inference;
     bool support_weight_fp16_storage;
 
+    // support cuda compute
+    bool support_cuda;
+
 public:
     // implement inference
     // return 0 if success
@@ -92,6 +99,7 @@ public:
     // return 0 if success
     virtual int forward_inplace(std::vector<Mat>& bottom_top_blobs, const Option& opt) const;
     virtual int forward_inplace(Mat& bottom_top_blob, const Option& opt) const;
+
 
 #if NCNN_VULKAN
 public:
@@ -123,6 +131,14 @@ public:
     // assigned immediately after creating this layer
     const VulkanDevice* vkdev;
 #endif // NCNN_VULKAN
+
+
+#if NCNN_CUDA
+    // assigned immediately after creating this layer
+    const CudaDevice* cudev;
+    virtual int forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const;
+    virtual int forward_inplace(CudaMat& /*bottom_top_blob*/, const Option& /*opt*/) const;
+#endif
 
 public:
     // layer type index

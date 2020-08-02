@@ -111,6 +111,18 @@ int Layer::forward_inplace(Mat& /*bottom_top_blob*/, const Option& /*opt*/) cons
     return -1;
 }
 
+#if NCNN_CUDA
+int Layer::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
+{
+    return -1;
+}
+
+int Layer::forward_inplace(CudaMat& /*bottom_top_blob*/, const Option& /*opt*/) const
+{
+    return -1;
+}
+#endif
+
 #if NCNN_VULKAN
 int Layer::upload_model(VkTransfer& /*cmd*/, const Option& /*opt*/)
 {
@@ -202,6 +214,12 @@ static const layer_registry_entry layer_registry_arm82[] = {
 };
 #endif // NCNN_RUNTIME_CPU && NCNN_ARM82
 
+#if NCNN_CUDA
+static const layer_registry_entry layer_registry_cuda[] = {
+#include "layer_registry_cuda.h"
+};
+#endif
+
 static const int layer_registry_entry_count = sizeof(layer_registry) / sizeof(layer_registry_entry);
 
 #if NCNN_STRING
@@ -234,6 +252,19 @@ Layer* create_layer(int index)
     // clang-format off
     // *INDENT-OFF*
     layer_creator_func layer_creator = 0;
+
+#if NCNN_CUDA
+    if (ncnn::get_cuda_gpu_count() > 0)
+    {
+        layer_creator = layer_registry_cuda[index].creator;
+    }
+
+    if (layer_creator != 0) {
+        //cuda layer created, skip cpu layer creation
+    }
+    else
+#endif // NCNN_RUNTIME_CPU && NCNN_AVX2
+
 #if NCNN_RUNTIME_CPU && NCNN_AVX2
     if (ncnn::cpu_support_x86_avx2())
     {
@@ -262,3 +293,4 @@ Layer* create_layer(int index)
 }
 
 } // namespace ncnn
+

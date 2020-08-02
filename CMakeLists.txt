@@ -6,6 +6,11 @@ if(CMAKE_TOOLCHAIN_FILE)
     message(STATUS "CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
 endif()
 
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")# collect source filesfile( GLOB  hdr *.hpp *.h )
+
+
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation Directory")
 endif()
@@ -53,6 +58,8 @@ option(NCNN_DISABLE_PIC "disable position-independent code" OFF)
 option(NCNN_BUILD_TESTS "build tests" OFF)
 option(NCNN_COVERAGE "build for coverage" OFF)
 option(NCNN_BUILD_BENCHMARK "build benchmark" ON)
+option(NCNN_CUDA "cuda compute support" ON)
+
 
 if(ANDROID OR IOS OR NCNN_SIMPLESTL OR CMAKE_CROSSCOMPILING)
     option(NCNN_DISABLE_RTTI "disable rtti" ON)
@@ -160,6 +167,13 @@ if(NCNN_VULKAN)
         endif()
     endif()
 endif()
+
+if(NCNN_CUDA)
+    set(CMAKE_CUDA_STANDARD 14)
+    find_package(CUDA REQUIRED)
+    include_directories("${CUDA_INCLUDE_DIRS}")
+endif()
+
 
 add_subdirectory(src)
 if(NCNN_BUILD_BENCHMARK)

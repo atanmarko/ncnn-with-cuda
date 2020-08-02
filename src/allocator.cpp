@@ -17,6 +17,12 @@
 #include "gpu.h"
 #include "pipeline.h"
 
+#include <algorithm>
+
+#if NCNN_CUDA
+#include "cuda_util.h"
+#endif
+
 #if __ANDROID_API__ >= 26
 #include <android/hardware_buffer.h>
 #endif // __ANDROID_API__ >= 26
@@ -242,6 +248,28 @@ void UnlockedPoolAllocator::fastFree(void* ptr)
     NCNN_LOGE("FATAL ERROR! unlocked pool allocator get wild %p", ptr);
     ncnn::fastFree(ptr);
 }
+
+#if NCNN_CUDA
+CudaAllocator::CudaAllocator(const CudaDevice* _cudev)
+{
+    cudev = _cudev;
+}
+
+void* CudaAllocator::fastMalloc(size_t size)
+{
+    void* buffer = nullptr;
+    checkCudaErrors(cudaSetDevice(cudev->device_index));
+    checkCudaErrors(cudaMalloc(&buffer, size));
+    return buffer;
+}
+
+void CudaAllocator::fastFree(void* ptr)
+{
+    checkCudaErrors(cudaFree(ptr));
+}
+
+
+#endif
 
 #if NCNN_VULKAN
 VkAllocator::VkAllocator(const VulkanDevice* _vkdev)
