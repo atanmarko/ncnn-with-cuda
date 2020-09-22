@@ -18,18 +18,18 @@
 
 namespace ncnn {
 
+int relu_absval_forward_inplace(float * d_input, const int input_size);
+
 AbsVal_cuda::AbsVal_cuda()
 {
     support_cuda = true;
 }
 
-int AbsVal_cuda::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
+int AbsVal_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const
 {
-    const int w = bottom_top_blob.w;
-    const int h = bottom_top_blob.h;
-    const int channels = bottom_top_blob.c;
-    const int size = w * h;
+    const int total_size = bottom_top_blob.total();
 
+    relu_absval_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()), total_size);
 
     return 0;
 }

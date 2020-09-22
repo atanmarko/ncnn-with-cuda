@@ -32,10 +32,8 @@ ReLU_cuda::ReLU_cuda()
 
 int ReLU_cuda::forward_inplace_int8(CudaMat& bottom_top_blob, const Option& opt) const
 {
-    const int w = bottom_top_blob.w;
-    const int h = bottom_top_blob.h;
-    const int channels = bottom_top_blob.c;
-    const int total_size = w * h * channels;
+
+    const int total_size = bottom_top_blob.total();
     relu_cuda_forward_inplace_int8(static_cast<int8_t*>(bottom_top_blob.get_raw_data()), total_size, slope);
 
     return 0;
@@ -43,18 +41,10 @@ int ReLU_cuda::forward_inplace_int8(CudaMat& bottom_top_blob, const Option& opt)
 
 int ReLU_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const
 {
-
-//    fprintf(stdout, " ReLU_cuda::forward_inplace gpu TESTING use_packing_layout=%d use_fp16_packed=%d use_fp16_storage=%d use_shader_pack8=%d "
-//                    "use_bf16_storage=%d use_image_storage=%d\n", opt.use_packing_layout, opt.use_fp16_packed, opt.use_fp16_storage,
-//            opt.use_shader_pack8, opt.use_bf16_storage, opt.use_image_storage);
-
     if (bottom_top_blob.elemsize == 1u)
         return ReLU_cuda::forward_inplace_int8(bottom_top_blob, opt);
 
-    const int w = bottom_top_blob.w;
-    const int h = bottom_top_blob.h;
-    const int channels = bottom_top_blob.c;
-    const int total_size = w * h * channels;
+    const int total_size = bottom_top_blob.total();
     relu_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()), total_size, slope);
 
     return 0;

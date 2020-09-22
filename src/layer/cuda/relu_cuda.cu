@@ -10,6 +10,8 @@
 __global__ void gpu_relu_forward_inplace(float* d_input, int input_size, float slope) {
     int index = blockIdx.x * blockDim.x + threadIdx.x; //limited to 1024 rows
 
+    if (index >= input_size) return;
+
     if (slope == 0.f) {
         d_input[index] = d_input[index] > 0 ? d_input[index] : 0;
     }
@@ -20,6 +22,8 @@ __global__ void gpu_relu_forward_inplace(float* d_input, int input_size, float s
 
 __global__ void gpu_relu_forward_inplace_int8(int8_t* d_input, int input_size, float slope) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (index >= input_size) return;
 
     if (slope == 0.f) {
         d_input[index] = d_input[index] > 0 ? d_input[index] : 0;

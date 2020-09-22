@@ -26,7 +26,7 @@ class AbsVal_cuda : virtual public AbsVal
 public:
     AbsVal_cuda();
 
-    virtual int forward_inplace(Mat& bottom_top_blob, const Option& opt) const;
+    virtual int forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const;
 };
 
 } // namespace ncnn
