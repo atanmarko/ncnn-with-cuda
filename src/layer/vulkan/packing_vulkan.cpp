@@ -251,7 +251,7 @@ int Packing_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute
     int elempack = bottom_blob.elempack;
     //     NCNN_LOGE("Packing_vulkan b2b %d %d   %d %d   %d %d", elempack, out_elempack, cast_type_from, cast_type_to, storage_type_from, storage_type_to);
 
-    if (elempack == out_elempack && cast_type_from == cast_type_to && bottom_blob.allocator == opt.blob_vkallocator)
+    if (elempack == out_elempack && cast_type_from == cast_type_to && bottom_blob._allocator == opt.blob_vkallocator)
     {
         top_blob = bottom_blob;
         return 0;
@@ -318,7 +318,7 @@ int Packing_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute
 
     if (dims == 1)
     {
-        if (opt.use_fp16_storage && out_elempack == 1 && cast_type_from == cast_type_to && bottom_blob.allocator == opt.blob_vkallocator)
+        if (opt.use_fp16_storage && out_elempack == 1 && cast_type_from == cast_type_to && bottom_blob._allocator == opt.blob_vkallocator)
         {
             top_blob = bottom_blob;
             top_blob.w = w * elempack;
@@ -420,7 +420,7 @@ int Packing_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob,
     int elempack = bottom_blob.elempack;
     //     NCNN_LOGE("Packing_vulkan i2i %d %d   %d %d   %d %d", elempack, out_elempack, cast_type_from, cast_type_to, storage_type_from, storage_type_to);
 
-    if (elempack == out_elempack && cast_type_from == cast_type_to && bottom_blob.allocator == opt.blob_vkallocator)
+    if (elempack == out_elempack && cast_type_from == cast_type_to && bottom_blob._allocator == opt.blob_vkallocator)
     {
         top_blob = bottom_blob;
         return 0;

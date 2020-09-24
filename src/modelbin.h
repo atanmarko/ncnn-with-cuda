@@ -60,6 +60,14 @@ protected:
     mutable const Mat* weights;
 };
 
+#if NCNN_CUDA
+class CudaModelBinFromMatArray : public ModelBinFromMatArray
+{
+    // Class used to point model initialization
+    // for cuda layers
+};
+#endif
+
 } // namespace ncnn
 
 #endif // NCNN_MODELBIN_H

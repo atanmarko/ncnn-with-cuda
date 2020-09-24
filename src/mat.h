@@ -345,6 +345,7 @@ public:
     // assign
     CudaMat& operator=(const CudaMat& m);
 
+
     // set all
     void fill(float v);
     void fill(int v);
@@ -2579,6 +2580,34 @@ inline void CudaMat::release()
     refcount = 0;
 }
 
+inline void CudaMat::create(int _w, size_t _elemsize,std::shared_ptr<CudaAllocator> _allocator)
+{
+    if (dims == 1 && w == _w && elemsize == _elemsize && elempack == 1 && allocator == _allocator)
+        return;
+
+    release();
+
+    assert(_allocator.use_count() > 0);
+
+    elemsize = _elemsize;
+    elempack = 1;
+    allocator = _allocator;
+
+    dims = 1;
+    w = _w;
+    h = 1;
+    c = 1;
+
+    cstep = w;
+
+    if (total() > 0)
+    {
+        size_t totalsize = alignSize(total() * elemsize, 4);
+        data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
+        refcount = std::make_shared<int>(1);
+    }
+}
+
 inline void CudaMat::create(int _w, size_t _elemsize, int _elempack, std::shared_ptr<CudaAllocator> _allocator)
 {
     if (dims == 1 && w == _w && elemsize == _elemsize && elempack == _elempack && allocator == _allocator)
@@ -2674,6 +2703,37 @@ inline void CudaMat::create_like(const CudaMat& m, std::shared_ptr<CudaAllocator
         create(m.w, m.h, m.elemsize, m.elempack, _allocator);
     if (_dims == 3)
         create(m.w, m.h, m.c, m.elemsize, m.elempack, _allocator);
+}
+
+inline CudaMat& CudaMat::operator=(const CudaMat& m)
+{
+    if (this == &m)
+        return *this;
+
+    if (m.refcount)
+        NCNN_XADD(m.refcount.get(), 1);
+
+    release();
+
+    data = m.data;
+    refcount = m.refcount;
+    elemsize = m.elemsize;
+    elempack = m.elempack;
+    allocator = m.allocator;
+
+    dims = m.dims;
+    w = m.w;
+    h = m.h;
+    c = m.c;
+
+    cstep = m.cstep;
+
+    return *this;
+}
+
+inline bool CudaMat::empty() const
+{
+    return data == nullptr || total() == 0;
 }
 
 #endif
