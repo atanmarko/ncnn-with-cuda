@@ -65,6 +65,7 @@ class CudaModelBinFromMatArray : public ModelBinFromMatArray
 {
     // Class used to point model initialization
     // for cuda layers
+    using ModelBinFromMatArray::ModelBinFromMatArray;
 };
 #endif
 

@@ -249,7 +249,11 @@ if(NCNN_CUDA)
 
     target_include_directories(ncnn_cuda_lib
             PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+            $<INSTALL_INTERFACE:include/ncnn>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+            PRIVATE
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/layer>)
 
     target_link_libraries(ncnn PUBLIC "${CUDA_LIBRARIES}")
     target_link_libraries(ncnn PRIVATE "ncnn_cuda_lib")

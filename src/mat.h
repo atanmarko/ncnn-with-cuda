@@ -523,6 +523,24 @@ public:
     size_t cstep{0};
 
 };
+
+class CudaMatInfo
+{
+public:
+    CudaMatInfo(const CudaMat& mat)
+        :  dims{mat.dims}, w{mat.w}, h{mat.h}, c{mat.c}, elemsize{mat.elemsize},  elempack{mat.elempack}, cstep{mat.cstep}
+    {
+    }
+
+
+    int dims;
+    int w;
+    int h;
+    int c;
+    size_t elemsize;
+    int elempack;
+    size_t cstep;
+};
 #endif
 
 #if NCNN_VULKAN
@@ -2580,7 +2598,7 @@ inline void CudaMat::release()
     refcount = 0;
 }
 
-inline void CudaMat::create(int _w, size_t _elemsize,std::shared_ptr<CudaAllocator> _allocator)
+inline void CudaMat::create(int _w, size_t _elemsize, std::shared_ptr<CudaAllocator> _allocator)
 {
     if (dims == 1 && w == _w && elemsize == _elemsize && elempack == 1 && allocator == _allocator)
         return;

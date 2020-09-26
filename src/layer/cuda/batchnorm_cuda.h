@@ -29,7 +29,7 @@ public:
     virtual int create_pipeline(const Option& /*opt*/);
     virtual int destroy_pipeline(const Option& /*opt*/);
 
-    virtual int load_model(const CudaModelBinFromMatArray& mb);
+    virtual int load_model(const CudaModelBinFromMatArray& mb, std::shared_ptr<ncnn::CudaAllocator> cuda_allocator);
 
     virtual int forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const;
 
@@ -40,8 +40,8 @@ public:
     CudaMat var_data_gpu;
     CudaMat bias_data_gpu;
 
-    CudaMat a_data_gpu;
-    CudaMat b_data_gpu;
+    mutable CudaMat a_data_gpu;
+    mutable CudaMat b_data_gpu;
 
 private:
     std::shared_ptr<CudaAllocator> _allocator;

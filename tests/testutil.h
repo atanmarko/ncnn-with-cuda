@@ -582,6 +582,7 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
     }
 
     ncnn::CudaDevice* cudev = ncnn::get_cuda_gpu_device(0);
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator{new ncnn::CudaAllocator(cudev)};
 
     op->cudev = cudev;
 
@@ -600,9 +601,9 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
 
     op->load_param(pd);
 
-    ncnn::ModelBinFromMatArray mb(weights.data());
+    ncnn::CudaModelBinFromMatArray mb(weights.data());
 
-    op->load_model(mb);
+    op->load_model(mb, cuda_allocator);
 
     if (op->use_int8_inference)
     {
@@ -615,7 +616,6 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
     opt.num_threads = 1;
     opt.use_cuda_compute = true;
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator{new ncnn::CudaAllocator(cudev)};
 
     opt.blob_cuda_allocator = cuda_allocator;
     opt.workspace_cuda_allocator = cuda_allocator;

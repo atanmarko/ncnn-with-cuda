@@ -18,9 +18,9 @@
 
 namespace ncnn {
 
-int relu_batchnorm_forward_inplace(float * d_input, const int input_size);
 void batchnorm_load_model(int channels, float eps, float* a_data_gpu, float* b_data_gpu,
                                          float* bias_data_gpu, float* slope_data_gpu, float* mean_data_gpu, float* var_data_gpu);
+int relu_batchnorm_forward_inplace(float* d_input, const float* b_data_gpu, const float* a_data_gpu, const CudaMatInfo& matInfo);
 
 BatchNorm_cuda::BatchNorm_cuda()
 {
@@ -42,32 +42,32 @@ int BatchNorm_cuda::destroy_pipeline(const Option& opt)
 }
 
 
-int BatchNorm_cuda::load_model(const CudaModelBinFromMatArray& mb)
+int BatchNorm_cuda::load_model(const CudaModelBinFromMatArray& mb, std::shared_ptr<ncnn::CudaAllocator> cuda_allocator)
 {
     if (!this->support_cuda)
         return -100;
 
 
-    slope_data_gpu = CudaMat{mb.load(channels, 1), _allocator};
+    slope_data_gpu = CudaMat{mb.load(channels, 1), cuda_allocator};
     if (slope_data_gpu.empty())
         return -100;
 
-    mean_data_gpu = CudaMat{mb.load(channels, 1), _allocator};
+    mean_data_gpu = CudaMat{mb.load(channels, 1), cuda_allocator};
     if (mean_data_gpu.empty())
         return -100;
 
-    var_data_gpu = CudaMat{mb.load(channels, 1), _allocator};
+    var_data_gpu = CudaMat{mb.load(channels, 1), cuda_allocator};
     if (var_data_gpu.empty())
         return -100;
 
-    bias_data_gpu = CudaMat{mb.load(channels, 1), _allocator};
+    bias_data_gpu = CudaMat{mb.load(channels, 1), cuda_allocator};
     if (bias_data_gpu.empty())
         return -100;
 
-    a_data_gpu.create(channels);
+    a_data_gpu.create(channels, sizeof(float), cuda_allocator );
     if (a_data_gpu.empty())
         return -100;
-    b_data_gpu.create(channels);
+    b_data_gpu.create(channels, sizeof(float), cuda_allocator);
     if (b_data_gpu.empty())
         return -100;
 
@@ -84,9 +84,15 @@ int BatchNorm_cuda::load_model(const CudaModelBinFromMatArray& mb)
 
 int BatchNorm_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const
 {
-    const int total_size = bottom_top_blob.total();
 
-   // relu_batchnorm_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()), total_size);
+    relu_batchnorm_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()),
+                                   static_cast<const float*>(b_data_gpu.get_raw_data()),
+                                   static_cast<const float*>(a_data_gpu.get_raw_data()),
+                                       CudaMatInfo{bottom_top_blob});
+
+
+
+
 
     return 0;
 }
