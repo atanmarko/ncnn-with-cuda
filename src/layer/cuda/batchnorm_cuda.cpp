@@ -42,11 +42,13 @@ int BatchNorm_cuda::destroy_pipeline(const Option& opt)
 }
 
 
-int BatchNorm_cuda::load_model(const CudaModelBinFromMatArray& mb, std::shared_ptr<ncnn::CudaAllocator> cuda_allocator)
+int BatchNorm_cuda::load_model(const CudaModelBinFromMatArray& mb)
 {
     if (!this->support_cuda)
         return -100;
 
+
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
 
     slope_data_gpu = CudaMat{mb.load(channels, 1), cuda_allocator};
     if (slope_data_gpu.empty())

@@ -46,9 +46,10 @@ public:
 
 void try_initialize_cuda_gpu_instances();
 int get_cuda_gpu_count();
-int get_default_cuda_gpu_index();
+int get_current_cuda_gpu_index();
 const CudaGpuInfo get_cuda_gpu_info(int device_index);
 CudaDevice* get_cuda_gpu_device(int cuda_device_index);
+CudaDevice* get_current_gpu_device();
 
 
 }

@@ -113,7 +113,7 @@ int Layer::forward_inplace(Mat& /*bottom_top_blob*/, const Option& /*opt*/) cons
 
 #if NCNN_CUDA
 
-int Layer::load_model(const CudaModelBinFromMatArray& /*mb*/, std::shared_ptr<ncnn::CudaAllocator> cuda_allocator)
+int Layer::load_model(const CudaModelBinFromMatArray& /*mb*/)
 {
     return 0;
 }

@@ -268,6 +268,11 @@ void CudaAllocator::fastFree(void* ptr)
     checkCudaErrors(cudaFree(ptr));
 }
 
+std::shared_ptr<ncnn::CudaAllocator> get_current_gpu_allocator()
+{
+    return std::shared_ptr<ncnn::CudaAllocator>{new ncnn::CudaAllocator(ncnn::get_current_gpu_device())};
+}
+
 
 #endif
 

@@ -28,6 +28,10 @@
 #include <vulkan/vulkan.h>
 #endif // NCNN_VULKAN
 
+#if NCNN_CUDA
+#include <memory>
+#endif // NCNN_VULKAN
+
 #if __ANDROID_API__ >= 26
 #include <android/hardware_buffer.h>
 #endif // __ANDROID_API__ >= 26
@@ -219,6 +223,8 @@ public:
 public:
     const CudaDevice* cudev;
 };
+
+std::shared_ptr<ncnn::CudaAllocator> get_current_gpu_allocator();
 
 #endif
 

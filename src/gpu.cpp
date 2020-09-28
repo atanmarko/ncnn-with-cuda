@@ -34,7 +34,7 @@ namespace ncnn {
 	}
 
 static int g_cuda_gpu_count = 0;
-static int g_default_cuda_gpu_index = -1;
+static int g_current_cuda_gpu_index = -1;
 
 #define NCNN_MAX_CUDA_GPU_COUNT 8
 
@@ -73,9 +73,14 @@ CudaDevice* get_cuda_gpu_device(int cuda_device_index)
     return g_cuda_devices[cuda_device_index];
 }
 
-int get_default_cuda_gpu_index()
+CudaDevice* get_current_gpu_device()
 {
-    return g_default_cuda_gpu_index;
+    return  get_cuda_gpu_device(get_current_cuda_gpu_index());
+}
+
+int get_current_cuda_gpu_index()
+{
+    return g_current_cuda_gpu_index;
 }
 
 static int find_default_cuda_device_index()
@@ -130,7 +135,7 @@ static int initialize_cuda_gpu_instances()
     if (g_cuda_gpu_count > 0)
     {
         // the default gpu device
-        g_default_cuda_gpu_index = find_default_cuda_device_index();
+        g_current_cuda_gpu_index = find_default_cuda_device_index();
     }
 
     return 0;

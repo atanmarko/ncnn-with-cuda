@@ -29,7 +29,7 @@ public:
     virtual int create_pipeline(const Option& /*opt*/);
     virtual int destroy_pipeline(const Option& /*opt*/);
 
-    virtual int load_model(const CudaModelBinFromMatArray& mb, std::shared_ptr<ncnn::CudaAllocator> cuda_allocator);
+    virtual int load_model(const CudaModelBinFromMatArray& mb);
 
     virtual int forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const;
 
