@@ -48,7 +48,7 @@ endif()
 
 ncnn_add_layer_test(AbsVal)
 ncnn_add_layer_test(BatchNorm)
-#ncnn_add_layer_test(BinaryOp)
+ncnn_add_layer_test(BinaryOp)
 #ncnn_add_layer_test(Cast)
 #ncnn_add_layer_test(Clip)
 #ncnn_add_layer_test(Concat)

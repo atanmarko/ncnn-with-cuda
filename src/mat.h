@@ -426,6 +426,11 @@ public:
         return data;
     }
 
+    const void* get_craw_data() const
+    {
+        return data;
+    }
+
 #if NCNN_PIXEL
     enum PixelType
     {

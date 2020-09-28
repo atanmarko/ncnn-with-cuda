@@ -18,9 +18,9 @@
 
 namespace ncnn {
 
-void batchnorm_load_model(int channels, float eps, float* a_data_gpu, float* b_data_gpu,
+void batchnorm_cuda_load_model(int channels, float eps, float* a_data_gpu, float* b_data_gpu,
                                          float* bias_data_gpu, float* slope_data_gpu, float* mean_data_gpu, float* var_data_gpu);
-int relu_batchnorm_forward_inplace(float* d_input, const float* b_data_gpu, const float* a_data_gpu, const CudaMatInfo& matInfo);
+int batchnorm_cuda_forward_inplace(float* d_input, const float* b_data_gpu, const float* a_data_gpu, const CudaMatInfo& matInfo);
 
 BatchNorm_cuda::BatchNorm_cuda()
 {
@@ -73,24 +73,22 @@ int BatchNorm_cuda::load_model(const CudaModelBinFromMatArray& mb)
     if (b_data_gpu.empty())
         return -100;
 
-    batchnorm_load_model(channels, eps, static_cast<float*>(a_data_gpu.get_raw_data()),
-                         static_cast<float*>(b_data_gpu.get_raw_data()),
-                         static_cast<float*>(bias_data_gpu.get_raw_data()),
-                         static_cast<float*>(slope_data_gpu.get_raw_data()),
-                         static_cast<float*>(mean_data_gpu.get_raw_data()),
-                         static_cast<float*>(var_data_gpu.get_raw_data())
-                         );
+    batchnorm_cuda_load_model(channels, eps, static_cast<float*>(a_data_gpu.get_raw_data()),
+                              static_cast<float*>(b_data_gpu.get_raw_data()),
+                              static_cast<float*>(bias_data_gpu.get_raw_data()),
+                              static_cast<float*>(slope_data_gpu.get_raw_data()),
+                              static_cast<float*>(mean_data_gpu.get_raw_data()),
+                              static_cast<float*>(var_data_gpu.get_raw_data()));
 
     return 0;
 }
 
 int BatchNorm_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const
 {
-
-    relu_batchnorm_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()),
+    batchnorm_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()),
                                    static_cast<const float*>(b_data_gpu.get_raw_data()),
                                    static_cast<const float*>(a_data_gpu.get_raw_data()),
-                                       CudaMatInfo{bottom_top_blob});
+                                   CudaMatInfo{bottom_top_blob});
 
 
 

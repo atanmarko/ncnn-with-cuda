@@ -60,7 +60,7 @@ __global__ void gpu_batchnorm_forward_inplace_3(float* d_input, const float* b_d
 namespace ncnn {
 
 
-int batchnorm_load_model(int channels, float eps, float* a_data_gpu, float* b_data_gpu,
+int batchnorm_cuda_load_model(int channels, float eps, float* a_data_gpu, float* b_data_gpu,
                          float* bias_data_gpu, float* slope_data_gpu, float* mean_data_gpu, float* var_data_gpu)
 {
 
@@ -76,7 +76,7 @@ int batchnorm_load_model(int channels, float eps, float* a_data_gpu, float* b_da
 
 
 
-int relu_batchnorm_forward_inplace(float* d_input, const float* b_data, const float* a_data, const CudaMatInfo& matInfo)
+int batchnorm_cuda_forward_inplace(float* d_input, const float* b_data, const float* a_data, const CudaMatInfo& matInfo)
 {
     const int thread_per_block = 512;
 
@@ -107,4 +107,5 @@ int relu_batchnorm_forward_inplace(float* d_input, const float* b_data, const fl
 
     return 0;
 }
+
 } // namespace ncnn
