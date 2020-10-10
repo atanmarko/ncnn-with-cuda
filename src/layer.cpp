@@ -118,7 +118,17 @@ int Layer::load_model(const CudaModelBinFromMatArray& /*mb*/)
     return 0;
 }
 
+int Layer::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const
+{
+    return -1;
+}
+
 int Layer::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
+{
+    return -1;
+}
+
+int Layer::forward_inplace(std::vector<CudaMat>& bottom_top_blobs, const Option& opt) const
 {
     return -1;
 }
@@ -127,6 +137,8 @@ int Layer::forward_inplace(CudaMat& /*bottom_top_blob*/, const Option& /*opt*/) 
 {
     return -1;
 }
+
+
 #endif
 
 #if NCNN_VULKAN

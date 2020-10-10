@@ -182,6 +182,27 @@ Mat Mat::from_float16(const unsigned short* data, int size)
     return m;
 }
 
+void Mat::print_mat(const Mat& mat)
+{
+    for (int i=0; i< mat.c; i++)
+    {
+        Mat tmp = mat.channel(i);
+
+        std::cout << "[";
+        for (int j=0;j<mat.h;j++)
+        {
+            float* row = tmp.row(j);
+            std::cout << "[";
+            for (int k=0; k<tmp.w; k++ )
+            {
+                std::cout << row[k] << " ";
+            }
+            std::cout << "]";
+        }
+        std::cout << "]" << std::endl;
+    }
+}
+
 #if NCNN_VULKAN
 #if __ANDROID_API__ >= 26
 VkImageMat VkImageMat::from_android_hardware_buffer(VkAndroidHardwareBufferImageAllocator* allocator)

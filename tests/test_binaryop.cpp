@@ -289,7 +289,8 @@ int main()
                   || test_binaryop_s1()
                   || test_binaryop_s2()
                   || test_binaryop_s3()
-                  || test_binaryop_s4();
+                  || test_binaryop_s4()
+                                    ;
 
         if (ret != 0)
             return ret;

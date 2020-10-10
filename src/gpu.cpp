@@ -118,7 +118,7 @@ static int initialize_cuda_gpu_instances()
     {
         cudaDeviceProp prop;
         checkCudaErrors(cudaGetDeviceProperties(&prop, i));
-        std::cout << "Cuda device Number:" << i << std::endl; ("Device Number: %d\n", i);
+        std::cout << "Cuda device Number:" << i << std::endl;
         std::cout << " Device name: " << prop.name << std::endl;
         std::cout << " Device Memory Clock Rate (KHz): " << prop.memoryClockRate << std::endl;
         std::cout << " Device Memory Bus Width (bits): " << prop.memoryBusWidth << std::endl;

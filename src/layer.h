@@ -137,8 +137,12 @@ public:
     // assigned immediately after creating this layer
     const CudaDevice* cudev;
     virtual int load_model(const CudaModelBinFromMatArray& /*mb*/);
+    virtual int forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const;
     virtual int forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const;
+
+    virtual int forward_inplace(std::vector<CudaMat>& bottom_top_blobs, const Option& opt) const;
     virtual int forward_inplace(CudaMat& /*bottom_top_blob*/, const Option& /*opt*/) const;
+
 #endif
 
 public:

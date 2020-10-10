@@ -859,15 +859,26 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
     {
         for (size_t i = 0; i < a4.size(); i++)
         {
-            d[i] = a4[i].clone();
+            d_gpu[i] = a_gpu[i].clone();
         }
 
-        op->forward_inplace(d, opt);
+        op->forward_inplace(d_gpu, opt);
     }
     else
     {
-        op->forward(a4, d, opt);
+        op->forward(a_gpu, d_gpu, opt);
     }
+
+    d[0] = d_gpu[0];
+
+
+//    std::cout << "Input A:" << std::endl;
+//    ncnn::Mat::print_mat(a[0]);
+//    std::cout << "Input B:" << std::endl;
+//    ncnn::Mat::print_mat(a[1]);
+//    std::cout << "Result:" << std::endl;
+//    ncnn::Mat::print_mat(d[0]);
+
 
     if (opt.use_fp16_storage)
     {
