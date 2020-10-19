@@ -539,6 +539,9 @@ public:
     {
     }
 
+    int total_size() const {
+        return c * cstep;
+    }
 
     int dims;
     int w;

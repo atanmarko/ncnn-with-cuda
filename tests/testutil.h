@@ -687,15 +687,17 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
     if (op->support_inplace)
     {
         op->forward_inplace(a_gpu, opt);
+        cudaDeviceSynchronize();
+        checkCudaErrors(cudaGetLastError());
         d = a_gpu;
     }
     else
     {
         op->forward(a_gpu, d_gpu, opt);
+        cudaDeviceSynchronize();
+        checkCudaErrors(cudaGetLastError());
         d = d_gpu;
     }
-
-
 
     if (opt.use_fp16_storage)
     {
@@ -711,6 +713,13 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
     }
 
     op->destroy_pipeline(opt);
+
+//    std::cout << "Input A:" << std::endl;
+//    ncnn::Mat::print_mat(a);
+//    std::cout << "Input B:" << std::endl;
+//    ncnn::Mat::print_mat(weights[0]);
+//    std::cout << "Result:" << std::endl;
+//    ncnn::Mat::print_mat(d);
 
 
     delete op;
@@ -868,6 +877,9 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
     {
         op->forward(a_gpu, d_gpu, opt);
     }
+
+    cudaDeviceSynchronize();
+    checkCudaErrors(cudaGetLastError());
 
     d[0] = d_gpu[0];
 

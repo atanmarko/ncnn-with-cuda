@@ -24,8 +24,6 @@ int relu_absval_forward_inplace(float* d_input, const int input_size)
     const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
 
     gpu_absval_forward_inplace<<<grid_size, block_size>>>(d_input, input_size);
-    cudaDeviceSynchronize();
-    checkCudaErrors(cudaGetLastError());
 
     return 0;
 }

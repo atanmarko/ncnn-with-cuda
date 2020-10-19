@@ -67,8 +67,6 @@ int batchnorm_cuda_load_model(int channels, float eps, float* a_data_gpu, float*
     gpu_batchnorm_load_model<<<1, channels>>>(channels, eps, a_data_gpu, b_data_gpu,
                                                 bias_data_gpu, slope_data_gpu, mean_data_gpu,
                                                 var_data_gpu);
-    cudaDeviceSynchronize();
-    checkCudaErrors(cudaGetLastError());
 
     return 0;
 }
@@ -101,9 +99,6 @@ int batchnorm_cuda_forward_inplace(float* d_input, const float* b_data, const fl
         dim3 grid_size(total_input_size / thread_per_block + 1, 1, 1);
         gpu_batchnorm_forward_inplace_3<<<grid_size, block_size>>>(d_input, b_data, a_data, matInfo, total_input_size);
     }
-
-    cudaDeviceSynchronize();
-    checkCudaErrors(cudaGetLastError());
 
     return 0;
 }

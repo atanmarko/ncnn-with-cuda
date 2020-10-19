@@ -453,9 +453,6 @@ static int binary_op_cuda(const float* a_input, const CudaMatInfo& a_info, const
     }
 
 
-    cudaDeviceSynchronize();
-    checkCudaErrors(cudaGetLastError());
-
     return 0;
 }
 
@@ -470,8 +467,6 @@ static int binaryop_scalar_cuda_inplace(float* a_input, const CudaMatInfo& a_inf
 
     gpu_binaryop_forward_inplace<Op><<<grid_size, block_size>>>(a_input, a_info, b);
 
-    cudaDeviceSynchronize();
-    checkCudaErrors(cudaGetLastError());
 
     return 0;
 }
