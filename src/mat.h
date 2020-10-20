@@ -45,6 +45,8 @@
 #endif // __ANDROID_API__ >= 9
 #endif // NCNN_PIXEL
 
+#include <iostream>
+
 namespace ncnn {
 
 #if NCNN_CUDA
@@ -2548,7 +2550,7 @@ inline VkImageView VkImageMat::imageview() const
 
 #endif // NCNN_VULKAN
 
-#ifdef NCNN_CUDA
+#if NCNN_CUDA
 
 inline CudaMat::CudaMat()
     : data(0), refcount(0), elemsize(0), elempack(0), allocator(0), dims(0), w(0), h(0), c(0), cstep(0)
