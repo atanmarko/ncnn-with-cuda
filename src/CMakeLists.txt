@@ -38,7 +38,7 @@ set(ncnn_SRCS
     simpleocv.cpp
     simpleomp.cpp
     simplestl.cpp
-)
+        )
 
 if(ANDROID)
     list(APPEND ncnn_SRCS mat_pixel_android.cpp)

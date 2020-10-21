@@ -1,6 +1,3 @@
-//
-// Created by amarko on 9/18/20.
-//
 
 #if NCNN_CUDA
 
