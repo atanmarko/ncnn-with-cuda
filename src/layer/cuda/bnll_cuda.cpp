@@ -33,6 +33,9 @@ BNLL_cuda::BNLL_cuda()
 
 int BNLL_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("BNLL_cuda forward_inplace");
+#endif
     CudaMatInfo a_info{bottom_top_blob};
 
     bnll_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()), a_info);

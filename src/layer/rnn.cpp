@@ -62,6 +62,9 @@ int RNN::load_model(const ModelBin& mb)
 
 int RNN::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("RNN forward");
+#endif
     // size x 1 x T
     const Mat& input_blob = bottom_blobs[0];
     size_t elemsize = input_blob.elemsize;

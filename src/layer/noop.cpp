@@ -29,6 +29,9 @@ Noop::Noop()
 
 int Noop::forward_inplace(std::vector<Mat>& /*bottom_top_blobs*/, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("Noop forward_inplace");
+#endif
     return 0;
 }
 

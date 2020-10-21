@@ -69,6 +69,9 @@ int BatchNorm::load_model(const ModelBin& mb)
 
 int BatchNorm::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("BatchNorm forward_inplace");
+#endif
     // a = bias - slope * mean / sqrt(var)
     // b = slope / sqrt(var)
     // value = b * value + a

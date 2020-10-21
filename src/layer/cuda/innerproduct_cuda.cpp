@@ -93,6 +93,9 @@ int InnerProduct_cuda::create_pipeline(const Option& opt)
 
 int InnerProduct_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("InnerProduct_cuda forward");
+#endif
     if (opt.use_int8_inference && gpu_weight_data.elemsize == (size_t)1u)
     {
         return forward_int8(bottom_blob, top_blob, opt);
@@ -109,6 +112,9 @@ int InnerProduct_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, co
 
 int InnerProduct_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("InnerProduct_cuda forward_int8");
+#endif
     CudaMat bottom_blob_tm = bottom_blob;
     if (bottom_blob.elemsize != 1)
     {

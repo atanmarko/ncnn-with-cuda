@@ -14,6 +14,11 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")# collect source filesfile( GLOB  hdr *.hpp *.h )
 endif()
 
+if (LOG_LAYERS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLOG_LAYERS=1")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLOG_LAYERS=0")
+endif()
 
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation Directory")
@@ -177,6 +182,8 @@ if(NCNN_CUDA)
     find_package(CUDA REQUIRED)
     include_directories("${CUDA_INCLUDE_DIRS}")
 endif()
+
+
 
 
 add_subdirectory(src)

@@ -50,6 +50,9 @@ signed char float32_to_int8(float value)
 
 int Cast::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Cast forward");
+#endif
     if (type_from == type_to)
     {
         top_blob = bottom_blob;

@@ -305,6 +305,9 @@ int ConvolutionDepthWise_x86::destroy_pipeline(const Option& opt)
 
 int ConvolutionDepthWise_x86::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("ConvolutionDepthWise_x86 forward");
+#endif
     // convolv with NxN kernel
     // value = value + bias
 

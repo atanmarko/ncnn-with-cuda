@@ -30,6 +30,9 @@ Split_cuda::Split_cuda()
 
 int Split_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("Split_cuda forward");
+#endif
     const CudaMat& bottom_blob = bottom_blobs[0];
     for (size_t i = 0; i < top_blobs.size(); i++)
     {

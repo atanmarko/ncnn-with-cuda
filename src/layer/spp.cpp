@@ -34,6 +34,9 @@ int SPP::load_param(const ParamDict& pd)
 
 int SPP::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("SPP forward");
+#endif
     size_t elemsize = bottom_blob.elemsize;
 
     // 1 + 4 + 16 + 64 + ... + (2*pyramid_height)^2

@@ -71,6 +71,9 @@ Cast_x86::Cast_x86()
 
 int Cast_x86::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Cast_x86 forward");
+#endif
 #if __AVX__
     if (type_from == type_to)
     {

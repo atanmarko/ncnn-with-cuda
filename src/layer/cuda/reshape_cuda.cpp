@@ -32,6 +32,9 @@ Reshape_cuda::Reshape_cuda()
 
 int Reshape_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option&) const
 {
+#if LOG_LAYERS
+    LOGL("Reshape_cuda forward");
+#endif
     int total = bottom_blob.w * bottom_blob.h * bottom_blob.c;
 
     int dims = bottom_blob.dims;

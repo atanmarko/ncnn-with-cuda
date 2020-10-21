@@ -90,6 +90,9 @@ int Padding_cuda::load_model(const CudaModelBinFromMatArray& pd)
 
 int Padding_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Padding_cuda forward");
+#endif
     if (top == 0 && bottom == 0 && left == 0 && right == 0 && front == 0 && behind == 0)
     {
         top_blob = bottom_blob;
@@ -181,7 +184,12 @@ int Padding_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const O
 
 int Padding_cuda::forward(const std::vector<CudaMat>&, std::vector<CudaMat>&, const Option&) const
 {
-    std::cout << "Padding_cuda::forward 2" << std::endl;
+#if LOG_LAYERS
+    LOGL("Padding_cuda forward 2");
+#endif
+
+    throw "Not implemented";
+
     return 0;
 }
 

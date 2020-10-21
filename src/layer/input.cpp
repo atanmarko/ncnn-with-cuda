@@ -37,6 +37,9 @@ int Input::load_param(const ParamDict& pd)
 
 int Input::forward_inplace(Mat& /*bottom_top_blob*/, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("Input forward_inplace");
+#endif
     return 0;
 }
 

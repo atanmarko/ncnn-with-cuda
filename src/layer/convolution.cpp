@@ -106,6 +106,9 @@ int Convolution::create_pipeline(const Option& opt)
 
 int Convolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Convolution forward");
+#endif
     // convolv with NxN kernel
     // value = value + bias
 
@@ -343,6 +346,9 @@ static inline signed char float2int8(float v)
 
 int Convolution::forward_int8(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Convolution forward_int8");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int channels = bottom_blob.c;

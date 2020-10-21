@@ -32,6 +32,9 @@ Flatten_cuda::Flatten_cuda()
 
 int Flatten_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option&) const
 {
+#if LOG_LAYERS
+    LOGL("Flatten_cuda forward");
+#endif
 
     CudaMatInfo bottom_blob_info{bottom_blob};
 

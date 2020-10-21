@@ -151,6 +151,9 @@ int PReLU_vulkan::upload_model(VkTransfer& cmd, const Option& opt)
 
 int PReLU_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("PReLU_vulkan forward_inplace");
+#endif
     int elempack = bottom_top_blob.elempack;
 
     std::vector<VkMat> bindings(2);
@@ -175,6 +178,9 @@ int PReLU_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const 
 
 int PReLU_vulkan::forward_inplace(VkImageMat& bottom_top_blob, VkCompute& cmd, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("PReLU_vulkan forward_inplace");
+#endif
     int elempack = bottom_top_blob.elempack;
 
     std::vector<VkImageMat> bindings(3);

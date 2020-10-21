@@ -25,6 +25,9 @@ DeepCopy::DeepCopy()
 
 int DeepCopy::forward(const Mat& bottom_blob, Mat& top_blob, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("DeepCopy forward");
+#endif
     top_blob = bottom_blob.clone();
     if (top_blob.empty())
         return -100;

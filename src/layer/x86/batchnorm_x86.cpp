@@ -32,6 +32,9 @@ BatchNorm_x86::BatchNorm_x86()
 
 int BatchNorm_x86::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("BatchNorm_x86 forward_inplace");
+#endif
     int dims = bottom_top_blob.dims;
 
     int elempack = bottom_top_blob.elempack;

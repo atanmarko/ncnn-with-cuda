@@ -32,6 +32,9 @@ PReLU_x86::PReLU_x86()
 
 int PReLU_x86::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("PReLU_x86 forward_inplace");
+#endif
     int dims = bottom_top_blob.dims;
 #if __SSE2__
     int elempack = bottom_top_blob.elempack;

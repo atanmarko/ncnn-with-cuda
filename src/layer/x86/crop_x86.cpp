@@ -82,6 +82,9 @@ static void crop_pack4_sse(const Mat& src, Mat& dst, int top, int left)
 
 int Crop_x86::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Crop_x86 forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int channels = bottom_blob.c;

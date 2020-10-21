@@ -176,6 +176,9 @@ static inline float sigmoid(float x)
 
 int YoloDetectionOutput::forward_inplace(std::vector<Mat>& bottom_top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("YoloDetectionOutput forward_inplace");
+#endif
     // gather all box
     std::vector<BBoxRect> all_bbox_rects;
     std::vector<float> all_bbox_scores;

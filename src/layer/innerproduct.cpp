@@ -92,6 +92,9 @@ int InnerProduct::create_pipeline(const Option& opt)
 
 int InnerProduct::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("InnerProduct forward");
+#endif
     if (opt.use_int8_inference && weight_data.elemsize == (size_t)1u)
     {
         return forward_int8(bottom_blob, top_blob, opt);
@@ -162,6 +165,9 @@ int InnerProduct::forward(const Mat& bottom_blob, Mat& top_blob, const Option& o
 
 int InnerProduct::forward_int8(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("InnerProduct forward_int8");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int channels = bottom_blob.c;

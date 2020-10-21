@@ -52,6 +52,9 @@ int Softmax_cuda::load_param(const ParamDict& pd)
 
 int Softmax_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option&) const
 {
+#if LOG_LAYERS
+    LOGL("Softmax_cuda forward_inplace");
+#endif
     return softmax_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()),
                                         CudaMatInfo{bottom_top_blob},
                                         axis,

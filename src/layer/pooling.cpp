@@ -46,6 +46,9 @@ int Pooling::load_param(const ParamDict& pd)
 
 int Pooling::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Pooling forward");
+#endif
     // max value in NxN window
     // avg value in NxN window
 

@@ -32,6 +32,9 @@ Scale_x86::Scale_x86()
 
 int Scale_x86::forward_inplace(std::vector<Mat>& bottom_top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Scale_x86 forward_inplace");
+#endif
     Mat& bottom_top_blob = bottom_top_blobs[0];
     const Mat& scale_blob = bottom_top_blobs[1];
 

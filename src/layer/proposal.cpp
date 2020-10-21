@@ -194,6 +194,9 @@ static void nms_sorted_bboxes(const std::vector<Rect>& bboxes, std::vector<size_
 
 int Proposal::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Proposal forward");
+#endif
     const Mat& score_blob = bottom_blobs[0];
     const Mat& bbox_blob = bottom_blobs[1];
     const Mat& im_info_blob = bottom_blobs[2];

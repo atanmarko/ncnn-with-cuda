@@ -299,6 +299,9 @@ int Padding_vulkan::upload_model(VkTransfer& cmd, const Option& opt)
 
 int Padding_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Padding_vulkan forward");
+#endif
     int dims = bottom_blob.dims;
     int w = bottom_blob.w;
     int h = bottom_blob.h;
@@ -821,6 +824,9 @@ int Padding_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob,
 
 int Padding_vulkan::forward(const std::vector<VkImageMat>& bottom_blobs, std::vector<VkImageMat>& top_blobs, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Padding_vulkan forward");
+#endif
     const VkImageMat& bottom_blob = bottom_blobs[0];
     const VkImageMat& reference_blob = bottom_blobs[1];
 

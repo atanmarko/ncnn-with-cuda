@@ -20,6 +20,7 @@ namespace ncnn {
 
 Eltwise_vulkan::Eltwise_vulkan()
 {
+
     support_vulkan = true;
     support_image_storage = true;
 
@@ -146,6 +147,9 @@ int Eltwise_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int Eltwise_vulkan::forward(const std::vector<VkMat>& bottom_blobs, std::vector<VkMat>& top_blobs, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Eltwise_vulkan forward");
+#endif
     const VkMat& bottom_blob = bottom_blobs[0];
     const VkMat& bottom_blob1 = bottom_blobs[1];
 
@@ -208,6 +212,9 @@ int Eltwise_vulkan::forward(const std::vector<VkMat>& bottom_blobs, std::vector<
 
 int Eltwise_vulkan::forward(const std::vector<VkImageMat>& bottom_blobs, std::vector<VkImageMat>& top_blobs, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Eltwise_vulkan forward");
+#endif
     const VkImageMat& bottom_blob = bottom_blobs[0];
     const VkImageMat& bottom_blob1 = bottom_blobs[1];
 

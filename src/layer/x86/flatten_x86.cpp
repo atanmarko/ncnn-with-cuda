@@ -32,6 +32,9 @@ Flatten_x86::Flatten_x86()
 
 int Flatten_x86::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Flatten_x86 forward");
+#endif
     int dims = bottom_blob.dims;
 
     if (dims == 1)

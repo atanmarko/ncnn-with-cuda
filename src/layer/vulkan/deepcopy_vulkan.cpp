@@ -141,6 +141,9 @@ int DeepCopy_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int DeepCopy_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("DeepCopy_vulkan forward");
+#endif
     int elempack = bottom_blob.elempack;
 
     top_blob.create_like(bottom_blob, opt.blob_vkallocator);
@@ -169,6 +172,9 @@ int DeepCopy_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkComput
 
 int DeepCopy_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("DeepCopy_vulkan forward");
+#endif
     int elempack = bottom_blob.elempack;
 
     top_blob.create_like(bottom_blob, opt.blob_vkallocator);

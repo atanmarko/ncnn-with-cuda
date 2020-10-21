@@ -127,6 +127,9 @@ int ReLU_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int ReLU_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("ReLU_vulkan forward_inplace");
+#endif
     int elempack = bottom_top_blob.elempack;
 
     std::vector<VkMat> bindings(1);
@@ -150,6 +153,9 @@ int ReLU_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const O
 
 int ReLU_vulkan::forward_inplace(VkImageMat& bottom_top_blob, VkCompute& cmd, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("ReLU_vulkan forward_inplace");
+#endif
     int elempack = bottom_top_blob.elempack;
 
     std::vector<VkImageMat> bindings(2);

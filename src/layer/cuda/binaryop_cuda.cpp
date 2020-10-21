@@ -59,6 +59,9 @@ int BinaryOp_cuda::load_param(const ParamDict& pd)
 
 int BinaryOp_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("BinaryOp_cuda forward");
+#endif
     const CudaMat& bottom_blob = bottom_blobs[0];
     const CudaMat& bottom_blob1 = bottom_blobs[1];
 
@@ -69,6 +72,9 @@ int BinaryOp_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector
 
 int BinaryOp_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("BinaryOp_cuda forward_inplace");
+#endif
     return binary_op_scalar_inplace_cuda_forward(bottom_top_blob, b, opt, this->op_type);
 }
 

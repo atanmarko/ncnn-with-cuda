@@ -223,6 +223,9 @@ int Scale_vulkan::upload_model(VkTransfer& cmd, const Option& opt)
 
 int Scale_vulkan::forward_inplace(std::vector<VkMat>& bottom_top_blobs, VkCompute& cmd, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("Scale_vulkan forward_inplace");
+#endif
     VkMat& bottom_top_blob = bottom_top_blobs[0];
     const VkMat& scale_blob = bottom_top_blobs[1];
 
@@ -251,6 +254,9 @@ int Scale_vulkan::forward_inplace(std::vector<VkMat>& bottom_top_blobs, VkComput
 
 int Scale_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Scale_vulkan forward_inplace");
+#endif
     std::vector<VkMat> bottom_top_blobs(2);
     bottom_top_blobs[0] = bottom_top_blob;
     bottom_top_blobs[1] = scale_data_gpu;
@@ -260,6 +266,9 @@ int Scale_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const 
 
 int Scale_vulkan::forward_inplace(std::vector<VkImageMat>& bottom_top_blobs, VkCompute& cmd, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("Scale_vulkan forward_inplace");
+#endif
     VkImageMat& bottom_top_blob = bottom_top_blobs[0];
     const VkImageMat& scale_blob = bottom_top_blobs[1];
 
@@ -289,6 +298,9 @@ int Scale_vulkan::forward_inplace(std::vector<VkImageMat>& bottom_top_blobs, VkC
 
 int Scale_vulkan::forward_inplace(VkImageMat& bottom_top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Scale_vulkan forward_inplace");
+#endif
     std::vector<VkImageMat> bottom_top_blobs(2);
     bottom_top_blobs[0] = bottom_top_blob;
     bottom_top_blobs[1] = scale_data_gpu_image;

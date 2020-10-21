@@ -271,6 +271,9 @@ int Softmax_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int Softmax_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Softmax_vulkan forward_inplace");
+#endif
     int dims = bottom_top_blob.dims;
     int w = bottom_top_blob.w;
     int h = bottom_top_blob.h;
@@ -418,6 +421,9 @@ int Softmax_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, cons
 
 int Softmax_vulkan::forward_inplace(VkImageMat& bottom_top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Softmax_vulkan forward_inplace");
+#endif
     int dims = bottom_top_blob.dims;
     int w = bottom_top_blob.w;
     int h = bottom_top_blob.h;

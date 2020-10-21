@@ -33,6 +33,9 @@ int ArgMax::load_param(const ParamDict& pd)
 
 int ArgMax::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("forward ArgMax");
+#endif
     int size = bottom_blob.total();
 
     if (out_max_val)

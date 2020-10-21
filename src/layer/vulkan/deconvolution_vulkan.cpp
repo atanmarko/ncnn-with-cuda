@@ -434,6 +434,9 @@ int Deconvolution_vulkan::upload_model(VkTransfer& cmd, const Option& opt)
 
 int Deconvolution_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Deconvolution_vulkan forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     size_t elemsize = bottom_blob.elemsize;
@@ -627,6 +630,9 @@ int Deconvolution_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkC
 
 int Deconvolution_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Deconvolution_vulkan forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     size_t elemsize = bottom_blob.elemsize;

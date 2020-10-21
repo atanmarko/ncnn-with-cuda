@@ -38,6 +38,9 @@ int Packing::load_param(const ParamDict& pd)
 
 int Packing::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Packing forward");
+#endif
     int elempack = bottom_blob.elempack;
 
     if (elempack == out_elempack)

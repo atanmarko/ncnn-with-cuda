@@ -43,6 +43,9 @@ int Softmax::load_param(const ParamDict& pd)
 
 int Softmax::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Softmax forward_inplace");
+#endif
     // value = exp( value - global max value )
     // sum all value
     // value = value / sum

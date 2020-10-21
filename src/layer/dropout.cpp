@@ -33,6 +33,9 @@ int Dropout::load_param(const ParamDict& pd)
 
 int Dropout::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Dropout forward_inplace");
+#endif
     if (scale == 1.f)
     {
         return 0;

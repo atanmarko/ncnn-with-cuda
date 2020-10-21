@@ -313,6 +313,9 @@ int InnerProduct_vulkan::upload_model(VkTransfer& cmd, const Option& opt)
 
 int InnerProduct_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("InnerProduct_vulkan forward");
+#endif
     // flatten
     VkMat bottom_blob_flattened = bottom_blob;
     {
@@ -402,6 +405,9 @@ int InnerProduct_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCo
 
 int InnerProduct_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("InnerProduct_vulkan forward");
+#endif
     // flatten
     VkImageMat bottom_blob_flattened = bottom_blob;
     {

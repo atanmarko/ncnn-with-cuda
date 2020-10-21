@@ -29,6 +29,9 @@ AbsVal_cuda::AbsVal_cuda()
 
 int AbsVal_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("AbsVal_cuda forward_inplace");
+#endif
     const int total_size = bottom_top_blob.total();
 
     relu_absval_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()), total_size);

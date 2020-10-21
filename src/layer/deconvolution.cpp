@@ -67,6 +67,9 @@ int Deconvolution::load_model(const ModelBin& mb)
 
 int Deconvolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Deconvolution forward");
+#endif
     // backward strided convolv with NxN kernel
     // value = value + bias
 

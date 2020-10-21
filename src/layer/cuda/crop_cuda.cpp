@@ -37,6 +37,9 @@ int Crop_cuda::load_param(const ParamDict& pd)
 
 int Crop_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option&) const
 {
+#if LOG_LAYERS
+    LOGL("Crop_cuda forward");
+#endif
     int _woffset, _hoffset, _coffset;
     int _outw{-1}, _outh{-1}, _outc;
     resolve_crop_roi(bottom_blob.shape(), _woffset, _hoffset, _coffset, _outw, _outh, _outc);
@@ -46,6 +49,9 @@ int Crop_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Opti
 
 int Crop_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option&) const
 {
+#if LOG_LAYERS
+    LOGL("Crop_cuda forward 2");
+#endif
     const CudaMat& bottom_blob = bottom_blobs[0];
     const CudaMat& reference_blob = bottom_blobs[1];
     CudaMat& top_blob = top_blobs[0];

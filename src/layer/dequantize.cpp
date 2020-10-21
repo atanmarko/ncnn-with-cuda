@@ -45,6 +45,9 @@ int Dequantize::load_model(const ModelBin& mb)
 
 int Dequantize::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Dequantize forward_inplace");
+#endif
     int dims = bottom_top_blob.dims;
 
     if (dims == 1)

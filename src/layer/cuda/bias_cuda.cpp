@@ -48,6 +48,9 @@ int Bias_cuda::load_model(const CudaModelBinFromMatArray& mb)
 
 int Bias_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt __attribute__((unused))) const
 {
+#if LOG_LAYERS
+    LOGL("Bias_cuda forward_inplace");
+#endif
     CudaMatInfo a_info{bottom_top_blob};
 
     return bias_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()), a_info,

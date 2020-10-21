@@ -34,6 +34,9 @@ int ExpandDims::load_param(const ParamDict& pd)
 
 int ExpandDims::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("ExpandDims forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int dims = bottom_blob.dims;

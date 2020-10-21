@@ -35,6 +35,15 @@
 #include "pipeline.h"
 #endif
 
+#if LOG_LAYERS
+#include <iostream>
+#include <string.h>
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+
+#define LOGL(X)  std::cout << ">>>> " << __FILENAME__ << "(" << __LINE__ << ")::"<< __FUNCTION__ <<"                              "<< X << std::endl;
+
+#endif
+
 namespace ncnn {
 
 class Layer

@@ -167,6 +167,9 @@ static int lstm(const Mat& bottom_blob, Mat& top_blob, int reverse, const Mat& w
 
 int LSTM::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("LSTM forward");
+#endif
     int T = bottom_blob.h;
 
     int num_directions = direction == 2 ? 2 : 1;

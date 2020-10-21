@@ -32,6 +32,9 @@ Reshape_x86::Reshape_x86()
 
 int Reshape_x86::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Reshape_x86 forward");
+#endif
     int elempack = bottom_blob.elempack;
 
     if (permute == 1)

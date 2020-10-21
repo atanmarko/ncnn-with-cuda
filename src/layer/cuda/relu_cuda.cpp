@@ -34,6 +34,9 @@ ReLU_cuda::ReLU_cuda()
 
 int ReLU_cuda::forward_inplace_int8(CudaMat& bottom_top_blob, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("ReLU_cuda forward_inplace_int8");
+#endif
 
     const int total_size = bottom_top_blob.total();
     relu_cuda_forward_inplace_int8(static_cast<int8_t*>(bottom_top_blob.get_raw_data()), total_size, slope);
@@ -43,6 +46,9 @@ int ReLU_cuda::forward_inplace_int8(CudaMat& bottom_top_blob, const Option& /*op
 
 int ReLU_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("ReLU_cuda forward_inplace");
+#endif
     if (bottom_top_blob.elemsize == 1u)
         return ReLU_cuda::forward_inplace_int8(bottom_top_blob, opt);
 

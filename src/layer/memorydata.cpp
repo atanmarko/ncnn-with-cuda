@@ -57,6 +57,9 @@ int MemoryData::load_model(const ModelBin& mb)
 
 int MemoryData::forward(const std::vector<Mat>& /*bottom_blobs*/, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("MemoryData forward");
+#endif
     Mat& top_blob = top_blobs[0];
 
     top_blob = data.clone(opt.blob_allocator);

@@ -131,6 +131,9 @@ int ConvolutionDepthWise_cuda::create_pipeline(const Option& opt)
 
 int ConvolutionDepthWise_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("ConvolutionDepthWise_cuda forward");
+#endif
     if (opt.use_int8_inference && weight_data.elemsize == (size_t)1u)
     {
         return forward_int8(bottom_blob, top_blob, opt);
@@ -196,6 +199,9 @@ int ConvolutionDepthWise_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_
 
 int ConvolutionDepthWise_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("ConvolutionDepthWise_cuda forward_int8");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int channels = bottom_blob.c;

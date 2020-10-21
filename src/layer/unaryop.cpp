@@ -185,6 +185,9 @@ struct unary_op_tanh
 
 int UnaryOp::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("UnaryOp forward_inplace");
+#endif
     if (op_type == Operation_ABS)
         return unary_op_inplace<unary_op_abs>(bottom_top_blob, opt);
 
