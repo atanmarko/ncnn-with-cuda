@@ -85,7 +85,7 @@ int BatchNorm_cuda::load_model(const CudaModelBinFromMatArray& mb)
     return 0;
 }
 
-int BatchNorm_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const
+int BatchNorm_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& /*opt*/) const
 {
     batchnorm_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()),
                                    static_cast<const float*>(b_data_gpu.get_raw_data()),

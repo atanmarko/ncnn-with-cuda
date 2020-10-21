@@ -229,7 +229,6 @@ __global__ void gpu_binaryop_forward_13(const float* a_input, const ncnn::CudaMa
     const int channel = index / out_channelSize;
     const int row = (index - (channel * out_channelSize)) / out_info.w;
     const int column = (index - (channel * out_channelSize)) % out_info.w;
-    const int channel_step = channel * out_channelSize * out_info.elemsize;
 
     if (a_info.dims == 1 && b_info.dims == 3)
     {

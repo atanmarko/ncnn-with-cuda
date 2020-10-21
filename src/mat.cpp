@@ -459,6 +459,66 @@ void convert_packing(const Mat& src, Mat& dst, int _elempack, const Option& opt)
     delete packing;
 }
 
+#if NCNN_CUDA
+void convert_packing(const CudaMat& src, CudaMat& dst, int _elempack, const Option& opt)
+{
+    Layer* packing = create_layer(LayerType::Packing);
+
+    ParamDict pd;
+    pd.set(0, _elempack);
+
+    packing->load_param(pd);
+
+    packing->create_pipeline(opt);
+
+    packing->forward(src, dst, opt);
+
+    packing->destroy_pipeline(opt);
+
+    delete packing;
+}
+
+void cast_float32_to_float16(const CudaMat& src, CudaMat& dst, const Option& opt)
+{
+    Layer* cast = create_layer(LayerType::Cast);
+
+    ParamDict pd;
+    pd.set(0, 1);
+    pd.set(1, 2);
+
+    cast->load_param(pd);
+
+    cast->create_pipeline(opt);
+
+    cast->forward(src, dst, opt);
+
+    cast->destroy_pipeline(opt);
+
+    delete cast;
+}
+
+void cast_float16_to_float32(const CudaMat& src, CudaMat& dst, const Option& opt)
+{
+    Layer* cast = create_layer(LayerType::Cast);
+
+    ParamDict pd;
+    pd.set(0, 2);
+    pd.set(1, 1);
+
+    cast->load_param(pd);
+
+    cast->create_pipeline(opt);
+
+    cast->forward(src, dst, opt);
+
+    cast->destroy_pipeline(opt);
+
+    delete cast;
+}
+
+#endif
+
+
 void flatten(const Mat& src, Mat& dst, const Option& opt)
 {
     Layer* flatten = create_layer(LayerType::Flatten);

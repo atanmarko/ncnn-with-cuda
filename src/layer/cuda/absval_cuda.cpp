@@ -27,7 +27,7 @@ AbsVal_cuda::AbsVal_cuda()
     support_cuda = true;
 }
 
-int AbsVal_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const
+int AbsVal_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& /*opt*/) const
 {
     const int total_size = bottom_top_blob.total();
 

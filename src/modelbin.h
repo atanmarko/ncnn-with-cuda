@@ -43,6 +43,7 @@ class ModelBinFromDataReader : public ModelBin
 public:
     ModelBinFromDataReader(const DataReader& dr);
 
+    using ModelBin::load;
     virtual Mat load(int w, int type) const;
 
 protected:
@@ -55,6 +56,7 @@ public:
     // construct from weight blob array
     ModelBinFromMatArray(const Mat* weights);
 
+    using ModelBin::load;
     virtual Mat load(int w, int type) const;
 
 protected:

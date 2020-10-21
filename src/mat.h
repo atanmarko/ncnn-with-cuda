@@ -140,6 +140,7 @@ public:
     void create_like(const CudaMat& m, Allocator* _allocator);
 
     Mat& operator=(const CudaMat& cumat);
+    Mat(const CudaMat& m);
 #endif
 
 #if NCNN_VULKAN
@@ -924,6 +925,12 @@ void quantize_float32_to_int8(const Mat& src, Mat& dst, float scale, const Optio
 void dequantize_int32_to_float32(Mat& m, float scale, const float* bias, int bias_data_size, const Option& opt = Option());
 void requantize_int8_to_int8(const Mat& src, Mat& dst, float scale_in, float scale_out, const float* bias, int bias_data_size, int fusion_relu, const Option& opt = Option());
 
+#if NCNN_CUDA
+void convert_packing(const CudaMat& src, CudaMat& dst, int _elempack, const Option& opt = Option());
+void cast_float32_to_float16(const CudaMat& src, CudaMat& dst, const Option& opt = Option());
+void cast_float16_to_float32(const CudaMat& src, CudaMat& dst, const Option& opt = Option());
+#endif
+
 inline Mat::Mat()
     : data(0), refcount(0), elemsize(0), elempack(0), allocator(0), dims(0), w(0), h(0), c(0), cstep(0)
 {
@@ -1554,17 +1561,24 @@ inline void Mat::create_like(const CudaMat& m, Allocator* _allocator)
         create(m.w, m.h, m.c, m.elemsize, m.elempack, _allocator);
 }
 
+inline Mat::Mat(const CudaMat& m): refcount{nullptr}
+{
+    create_like(m, nullptr);
+
+    checkCudaErrors(cudaMemcpy(data, m.data, m.total() * m.elemsize, cudaMemcpyDeviceToHost));
+}
+
 inline Mat& Mat::operator=(const CudaMat& m)
 {
     release();
 
     create_like(m, nullptr);
 
-    checkCudaErrors(cudaMemcpy(data, m.data, total() * elemsize, cudaMemcpyDeviceToHost));
+    checkCudaErrors(cudaMemcpy(data, m.data, m.total() * m.elemsize, cudaMemcpyDeviceToHost));
 
     return *this;
 }
-#endif // NCNN_VULKAN
+#endif // NCNN_CUDA
 
 #if NCNN_VULKAN
 inline void Mat::create_like(const VkMat& m, Allocator* _allocator)

@@ -7,8 +7,11 @@ if(CMAKE_TOOLCHAIN_FILE)
 endif()
 
 set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")# collect source filesfile( GLOB  hdr *.hpp *.h )
+
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")# collect source filesfile( GLOB  hdr *.hpp *.h )
+endif()
 
 
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -55,7 +58,7 @@ option(NCNN_SYSTEM_GLSLANG "use system glslang library" OFF)
 option(NCNN_REQUANT "auto merge int8 quant and dequant" OFF)
 option(NCNN_RUNTIME_CPU "runtime dispatch cpu routines" ON)
 option(NCNN_DISABLE_PIC "disable position-independent code" OFF)
-option(NCNN_BUILD_TESTS "build tests" OFF)
+option(NCNN_BUILD_TESTS "build tests" ON)
 option(NCNN_COVERAGE "build for coverage" OFF)
 option(NCNN_BUILD_BENCHMARK "build benchmark" ON)
 option(NCNN_CUDA "cuda compute support" ON)

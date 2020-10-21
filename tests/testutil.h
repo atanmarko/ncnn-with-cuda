@@ -685,20 +685,21 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
     ncnn::CudaMat d_gpu{};
     d_gpu.create_like(a_gpu, cuda_allocator);
 
+    auto begin = std::chrono::high_resolution_clock::now();
     if (op->support_inplace)
     {
         op->forward_inplace(a_gpu, opt);
-        cudaDeviceSynchronize();
-        checkCudaErrors(cudaGetLastError());
         d = a_gpu;
     }
     else
     {
         op->forward(a_gpu, d_gpu, opt);
-        cudaDeviceSynchronize();
-        checkCudaErrors(cudaGetLastError());
         d = d_gpu;
     }
+    cudaDeviceSynchronize();
+    checkCudaErrors(cudaGetLastError());
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cout << "test_layer_cuda execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
 
     if (opt.use_fp16_storage)
     {
@@ -969,15 +970,15 @@ int test_layer(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn:
     }
 
     // gpu shape hint
-    {
-        std::vector<ncnn::Mat> d;
-        int ret = test_layer_gpu(typeindex, pd, weights, _opt, a, top_blob_count, d, b, func);
-        if (ret != 233 && (ret != 0 || CompareMat(b, d, epsilon) != 0))
-        {
-            fprintf(stderr, "test_layer_gpu failed with shape hint\n");
-            return -1;
-        }
-    }
+//    {
+//        std::vector<ncnn::Mat> d;
+//        int ret = test_layer_gpu(typeindex, pd, weights, _opt, a, top_blob_count, d, b, func);
+//        if (ret != 233 && (ret != 0 || CompareMat(b, d, epsilon) != 0))
+//        {
+//            fprintf(stderr, "test_layer_gpu failed with shape hint\n");
+//            return -1;
+//        }
+//    }
 #endif // NCNN_CUDA
 
 
@@ -1038,6 +1039,7 @@ int test_layer_naive(int typeindex, const ncnn::ParamDict& pd, const std::vector
 
     op->create_pipeline(opt);
 
+    auto begin = std::chrono::high_resolution_clock::now();
     if (op->support_inplace)
     {
         b = a.clone();
@@ -1047,6 +1049,8 @@ int test_layer_naive(int typeindex, const ncnn::ParamDict& pd, const std::vector
     {
         ((T*)op)->T::forward(a, b, opt);
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cout << "test_layer_naive execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
 
     op->destroy_pipeline(opt);
 
@@ -1145,6 +1149,7 @@ int test_layer_cpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
         a4 = a_bf16;
     }
 
+    auto begin = std::chrono::high_resolution_clock::now();
     if (op->support_inplace)
     {
         c = a4.clone();
@@ -1154,6 +1159,8 @@ int test_layer_cpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
     {
         op->forward(a4, c, opt);
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cout << "test_layer_cpu execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
 
     if (opt.use_fp16_storage)
     {
@@ -1337,29 +1344,23 @@ int test_layer(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn:
     // naive
     ncnn::Mat b;
     {
-        auto begin = std::chrono::high_resolution_clock::now();
         int ret = test_layer_naive(typeindex, pd, weights, a, b, func);
         if (ret != 0)
         {
             fprintf(stderr, "test_layer_naive failed\n");
             return -1;
         }
-        auto end = std::chrono::high_resolution_clock::now();
-        std::cout << "test_layer_naive execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
     }
 
     // cpu
     {
         ncnn::Mat c;
-        auto begin = std::chrono::high_resolution_clock::now();
         int ret = test_layer_cpu(typeindex, pd, weights, _opt, a, c, ncnn::Mat(), func);
         if (ret != 0 || CompareMat(b, c, epsilon) != 0)
         {
             fprintf(stderr, "test_layer_cpu failed\n");
             return -1;
         }
-        auto end = std::chrono::high_resolution_clock::now();
-        std::cout << "test_layer_cpu execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
     }
 
     // cpu shape hint
@@ -1377,29 +1378,23 @@ int test_layer(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn:
     // gpu
     {
         ncnn::Mat d;
-        auto begin = std::chrono::high_resolution_clock::now();
         int ret = test_layer_gpu(typeindex, pd, weights, _opt, a, d, ncnn::Mat(), func);
         if (ret != 233 && (ret != 0 || CompareMat(b, d, epsilon) != 0))
         {
             fprintf(stderr, "test_layer_gpu failed\n");
             return -1;
         }
-        auto end = std::chrono::high_resolution_clock::now();
-        std::cout << "test_layer_cuda execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
     }
 
     // gpu shape hint
     {
         ncnn::Mat d;
-        auto begin = std::chrono::high_resolution_clock::now();
         int ret = test_layer_gpu(typeindex, pd, weights, _opt, a, d, b, func);
         if (ret != 233 && (ret != 0 || CompareMat(b, d, epsilon) != 0))
         {
             fprintf(stderr, "test_layer_gpu failed with shape hint\n");
             return -1;
         }
-        auto end = std::chrono::high_resolution_clock::now();
-        std::cout << "test_layer_gpu shape hint execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
     }
 #endif // NCNN_CUDA
 

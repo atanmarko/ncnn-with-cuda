@@ -16,40 +16,34 @@
 // Parts of this file are originally copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
 
 
-#include "relu_cuda.h"
+#include "packing_cuda.h"
 
-#include <algorithm>
-#include <chrono>
+#include <math.h>
 
 namespace ncnn {
 
-int relu_cuda_forward_inplace(float* d_input, int input_size, float slope);
-int relu_cuda_forward_inplace_int8(int8_t * d_input, int input_size, float slope);
+int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Packing_cuda::packing_options options);
 
-ReLU_cuda::ReLU_cuda()
+Packing_cuda::Packing_cuda()
 {
     support_cuda = true;
 }
 
 
-int ReLU_cuda::forward_inplace_int8(CudaMat& bottom_top_blob, const Option& /*opt*/) const
+int Packing_cuda::load_param(const ParamDict& pd)
 {
-
-    const int total_size = bottom_top_blob.total();
-    relu_cuda_forward_inplace_int8(static_cast<int8_t*>(bottom_top_blob.get_raw_data()), total_size, slope);
+    Packing::load_param(pd);
 
     return 0;
 }
 
-int ReLU_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const
+
+int Packing_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option&) const
 {
-    if (bottom_top_blob.elemsize == 1u)
-        return ReLU_cuda::forward_inplace_int8(bottom_top_blob, opt);
-
-    const int total_size = bottom_top_blob.total();
-    relu_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()), total_size, slope);
-
-    return 0;
+    return packing_cuda_forward(bottom_blob,
+                                top_blob,
+                                Packing_cuda::packing_options{*this});
 }
+
 
 } // namespace ncnn

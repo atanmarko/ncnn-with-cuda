@@ -46,10 +46,8 @@ int Bias_cuda::load_model(const CudaModelBinFromMatArray& mb)
     return 0;
 }
 
-int Bias_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const
+int Bias_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt __attribute__((unused))) const
 {
-    const int total_size = bottom_top_blob.total();
-
     CudaMatInfo a_info{bottom_top_blob};
 
     bias_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()), a_info,

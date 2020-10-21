@@ -106,7 +106,7 @@ int main()
            || test_bnll_2()
         ;
 #if NCNN_CUDA
-    cudProfilerStop();
+    cudaProfilerStop();
 #endif
 
 }

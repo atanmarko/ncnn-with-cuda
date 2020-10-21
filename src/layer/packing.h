@@ -28,6 +28,10 @@ public:
 
     virtual int forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const;
 
+#if NCNN_CUDA
+    virtual int forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const;
+#endif
+
 public:
     int out_elempack;
     int use_padding;

@@ -240,10 +240,12 @@ if(NCNN_VULKAN)
 endif()
 
 if(NCNN_CUDA)
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --debug --device-debug -O0)  #For CUDA debugging
+    if(CMAKE_BUILD_TYPE MATCHES Debug)
+        set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --debug --device-debug -O0)  #For CUDA debugging
+    endif()
     CUDA_ADD_LIBRARY(ncnn_cuda_lib STATIC "${ncnn_SRCS_CUDA}" )
     add_compile_definitions(NCNN_CUDA=1)
-#    target_compile_options(target PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+#    target_compile_options(ncnn_cuda_lib PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
 #            --generate-line-info
 #            --use_fast_math
 #            --relocatable-device-code=true

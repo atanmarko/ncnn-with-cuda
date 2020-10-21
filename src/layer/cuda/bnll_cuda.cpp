@@ -31,10 +31,8 @@ BNLL_cuda::BNLL_cuda()
 }
 
 
-int BNLL_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const
+int BNLL_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& /*opt*/) const
 {
-    const int total_size = bottom_top_blob.total();
-
     CudaMatInfo a_info{bottom_top_blob};
 
     bnll_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()), a_info);
