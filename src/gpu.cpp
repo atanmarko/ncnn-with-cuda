@@ -81,6 +81,10 @@ CudaDevice* get_current_gpu_device()
 
 int get_current_cuda_gpu_index()
 {
+    if (g_current_cuda_gpu_index < 0) {
+        try_initialize_cuda_gpu_instances();
+    }
+
     return g_current_cuda_gpu_index;
 }
 

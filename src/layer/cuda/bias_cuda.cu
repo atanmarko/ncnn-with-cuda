@@ -38,9 +38,10 @@ namespace ncnn {
 
 int bias_cuda_forward_inplace(float* a_input, const ncnn::CudaMatInfo& a_info, const float* bias)
 {
-    int thread_per_block = ((a_info.total_size() / 32) + 1) * 32;
+    int thread_per_block = (((a_info.total_size() - 1) / 32) + 1) * 32;
+    if (thread_per_block > 1024) thread_per_block = 1024;
     const dim3 block_size(thread_per_block, 1, 1);
-    const dim3 grid_size(a_info.total_size() / thread_per_block + 1, 1, 1);
+    const dim3 grid_size((a_info.total_size() - 1) / thread_per_block + 1, 1, 1);
 
     gpu_bias_forward_inplace<<<grid_size, block_size>>>(a_input, a_info, bias);
 

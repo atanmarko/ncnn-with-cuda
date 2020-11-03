@@ -54,9 +54,10 @@ namespace ncnn {
 
 int relu_cuda_forward_inplace(float* d_input, int input_size, float slope)
 {
-    const int thread_per_block = 512;
+    int thread_per_block = (((input_size - 1) / 32) + 1) * 32;
+    if (thread_per_block > 1024) thread_per_block = 1024;
     const dim3 block_size(thread_per_block, 1, 1);
-    const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+    const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
 
     gpu_relu_forward_inplace<<<grid_size, block_size>>>(d_input, input_size, slope);
 
@@ -67,7 +68,7 @@ int relu_cuda_forward_inplace_int8(int8_t * d_input, int input_size, float slope
 {
     const int thread_per_block = 512;
     const dim3 block_size(thread_per_block, 1, 1);
-    const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+    const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
 
     gpu_relu_forward_inplace_int8<<<grid_size, block_size>>>(d_input, input_size, slope);
     cudaDeviceSynchronize();

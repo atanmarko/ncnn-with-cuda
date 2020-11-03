@@ -356,8 +356,8 @@ static int binary_op_cuda(const float* a_input, const CudaMatInfo& a_info, const
     const int channels_a = a_info.c;
     const int channels_b = b_info.c;
 
-    const int num_matrix_elements = std::max(a_info.c*a_info.cstep, b_info.c*b_info.cstep);
-    int thread_per_block = 512 > num_matrix_elements ? 512 : ((num_matrix_elements / 32) + 1) * 32;
+    const int num_matrix_elements = std::max(a_info.c * a_info.cstep, b_info.c * b_info.cstep);
+    int thread_per_block = (((num_matrix_elements - 1) / 32) + 1) * 32;
     if (thread_per_block > 1024) thread_per_block = 1024;
 
     if (a_info.dims == 3)
@@ -367,33 +367,33 @@ static int binary_op_cuda(const float* a_input, const CudaMatInfo& a_info, const
             {
                 const int input_size = b_info.cstep * b_info.c;
                 const dim3 block_size(thread_per_block, 1, 1);
-                const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+                const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
                 gpu_binaryop_forward_31<Op><<<grid_size, block_size>>>(a_input, a_info, b_input, b_info, c_output, c_info);
             }
             else if (b_info.w == 1 && b_info.h == 1 && channels_a == channels_b)
             {
                 const int input_size = a_info.cstep * a_info.c;
                 const dim3 block_size(thread_per_block, 1, 1);
-                const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+                const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
                 gpu_binaryop_forward_31<Op><<<grid_size, block_size>>>(a_input, a_info, b_input, b_info, c_output, c_info);
             }
             else {
                 const int input_size = a_info.cstep * a_info.c > b_info.cstep * b_info.c ? a_info.cstep * a_info.c : b_info.cstep * b_info.c;
                 const dim3 block_size(thread_per_block, 1, 1);
-                const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+                const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
                 gpu_binaryop_forward_33<Op><<<grid_size, block_size>>>(a_input, a_info, b_input, b_info, c_output, c_info);
 
             }
         } else if (b_info.dims == 2) {
             const int input_size = a_info.cstep * a_info.c;
             const dim3 block_size(thread_per_block, 1, 1);
-            const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+            const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
             gpu_binaryop_forward_32<Op><<<grid_size, block_size>>>(a_input, a_info, b_input, b_info, c_output, c_info);
         }
         else if (b_info.dims == 1) {
             const int input_size = a_info.cstep * a_info.c;
             const dim3 block_size(thread_per_block, 1, 1);
-            const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+            const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
             if (b_info.w == 1)
                 gpu_binaryop_forward_1<Op><<<grid_size, block_size>>>(a_input, a_info, b_input, b_info, c_output, c_info);
             else
@@ -406,7 +406,7 @@ static int binary_op_cuda(const float* a_input, const CudaMatInfo& a_info, const
         {
             const int input_size = a_info.cstep * a_info.c;
             const dim3 block_size(thread_per_block, 1, 1);
-            const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+            const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
 
             if (b_info.w == 1)
                 gpu_binaryop_forward_1<Op><<<grid_size, block_size>>>(a_input, a_info, b_input, b_info, c_output, c_info);
@@ -416,12 +416,12 @@ static int binary_op_cuda(const float* a_input, const CudaMatInfo& a_info, const
         } else if (b_info.dims == 2) {
             const int input_size = a_info.cstep * a_info.c;
             const dim3 block_size(thread_per_block, 1, 1);
-            const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+            const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
             gpu_binaryop_forward_33<Op><<<grid_size, block_size>>>(a_input, a_info, b_input, b_info, c_output, c_info);
         }  else if (b_info.dims == 3) {
             const int input_size = b_info.cstep * b_info.c;
             const dim3 block_size(thread_per_block, 1, 1);
-            const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+            const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
             gpu_binaryop_forward_32<Op><<<grid_size, block_size>>>(a_input, a_info, b_input, b_info, c_output, c_info);
         }
     }
@@ -430,25 +430,25 @@ static int binary_op_cuda(const float* a_input, const CudaMatInfo& a_info, const
         if (a_info.w == 1) {
             const int input_size = b_info.cstep * b_info.c;
             const dim3 block_size(thread_per_block, 1, 1);
-            const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+            const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
             gpu_binaryop_forward_1<Op><<<grid_size, block_size>>>(a_input, a_info, b_input, b_info, c_output, c_info);
         }
         else if (b_info.dims == 1) {
                 const int input_size = a_info.cstep * a_info.c;
                 const dim3 block_size(thread_per_block, 1, 1);
-                const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+                const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
                 gpu_binaryop_forward_1<Op><<<grid_size, block_size>>>(a_input, a_info, b_input, b_info, c_output, c_info);
         }
         else if (b_info.dims == 2) {
             const int input_size = b_info.cstep * b_info.c;
             const dim3 block_size(thread_per_block, 1, 1);
-            const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+            const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
             gpu_binaryop_forward_12<Op><<<grid_size, block_size>>>(a_input, a_info, b_input, b_info, c_output, c_info);
         }
         else if (b_info.dims == 3) {
             const int input_size = b_info.cstep * b_info.c;
             const dim3 block_size(thread_per_block, 1, 1);
-            const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+            const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
             gpu_binaryop_forward_13<Op><<<grid_size, block_size>>>(a_input, a_info, b_input, b_info, c_output, c_info);
         }
     }
@@ -464,7 +464,7 @@ static int binaryop_scalar_cuda_inplace(float* a_input, const CudaMatInfo& a_inf
     const int input_size = a_info.cstep * a_info.c;
 
     const dim3 block_size(thread_per_block, 1, 1);
-    const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+    const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
 
     gpu_binaryop_forward_inplace<Op><<<grid_size, block_size>>>(a_input, a_info, b);
 

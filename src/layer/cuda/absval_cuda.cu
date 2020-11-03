@@ -35,9 +35,10 @@ namespace ncnn {
 
 int relu_absval_forward_inplace(float* d_input, const int input_size)
 {
-    const int thread_per_block = 512;
+    int thread_per_block = (((input_size - 1) / 32) + 1) * 32;
+    if (thread_per_block > 1024) thread_per_block = 1024;
     const dim3 block_size(thread_per_block, 1, 1);
-    const dim3 grid_size(input_size / thread_per_block + 1, 1, 1);
+    const dim3 grid_size((input_size - 1) / thread_per_block + 1, 1, 1);
 
     gpu_absval_forward_inplace<<<grid_size, block_size>>>(d_input, input_size);
 

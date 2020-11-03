@@ -92,27 +92,33 @@ int batchnorm_cuda_load_model(int channels, float eps, float* a_data_gpu, float*
 
 int batchnorm_cuda_forward_inplace(float* d_input, const float* b_data, const float* a_data, const CudaMatInfo& matInfo)
 {
-    const int thread_per_block = 512;
+
 
     if (matInfo.dims == 1)
     {
         const int input_size = matInfo.w;
+        int thread_per_block = (((input_size - 1) / 32) + 1) * 32;
+        if (thread_per_block > 1024) thread_per_block = 1024;
         dim3 block_size(thread_per_block,1,1);
-        dim3 grid_size(matInfo.w / thread_per_block + 1, 1, 1);
+        dim3 grid_size((matInfo.w - 1) / thread_per_block + 1, 1, 1);
         gpu_batchnorm_forward_inplace_1<<<grid_size, block_size>>>(d_input, b_data, a_data, matInfo, input_size);
     }
     if (matInfo.dims == 2)
     {
         const int input_size = matInfo.w * matInfo.h;
+        int thread_per_block = (((input_size - 1) / 32) + 1) * 32;
+        if (thread_per_block > 1024) thread_per_block = 1024;
         dim3 block_size(thread_per_block,1,1);
-        dim3 grid_size( input_size / thread_per_block + 1, 1, 1);
+        dim3 grid_size( (input_size - 1) / thread_per_block + 1, 1, 1);
         gpu_batchnorm_forward_inplace_2<<<grid_size, block_size>>>(d_input, b_data, a_data, matInfo, input_size);
     }
     if (matInfo.dims == 3)
     {
         const int total_input_size = matInfo.cstep * matInfo.c;
+        int thread_per_block = (((total_input_size - 1) / 32) + 1) * 32;
+        if (thread_per_block > 1024) thread_per_block = 1024;
         dim3 block_size(thread_per_block,1,1);
-        dim3 grid_size(total_input_size / thread_per_block + 1, 1, 1);
+        dim3 grid_size((total_input_size - 1) / thread_per_block + 1, 1, 1);
         gpu_batchnorm_forward_inplace_3<<<grid_size, block_size>>>(d_input, b_data, a_data, matInfo, total_input_size);
     }
 

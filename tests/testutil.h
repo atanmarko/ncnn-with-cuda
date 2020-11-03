@@ -685,20 +685,26 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
     ncnn::CudaMat d_gpu{};
     d_gpu.create_like(a_gpu, cuda_allocator);
 
-    auto begin = std::chrono::high_resolution_clock::now();
+    std::chrono::high_resolution_clock::time_point begin, end;;
     if (op->support_inplace)
     {
+        begin = std::chrono::high_resolution_clock::now();
         op->forward_inplace(a_gpu, opt);
+        cudaDeviceSynchronize();
+        checkCudaErrors(cudaGetLastError());
+        end = std::chrono::high_resolution_clock::now();
         d = a_gpu;
     }
     else
     {
+        begin = std::chrono::high_resolution_clock::now();
         op->forward(a_gpu, d_gpu, opt);
+        cudaDeviceSynchronize();
+        checkCudaErrors(cudaGetLastError());
+        end = std::chrono::high_resolution_clock::now();
         d = d_gpu;
     }
-    cudaDeviceSynchronize();
-    checkCudaErrors(cudaGetLastError());
-    auto end = std::chrono::high_resolution_clock::now();
+
     std::cout << "test_layer_cuda execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
 
     if (opt.use_fp16_storage)
@@ -716,11 +722,11 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
 
     op->destroy_pipeline(opt);
 
-//    std::cout << "Input A:" << std::endl;
+//    std::cout << "GPU Input A:" << std::endl;
 //    ncnn::Mat::print_mat(a);
 //    std::cout << "Input B:" << std::endl;
 //    ncnn::Mat::print_mat(weights[0]);
-//    std::cout << "Result:" << std::endl;
+//    std::cout << "GPU Result:" << std::endl;
 //    ncnn::Mat::print_mat(d);
 
 
@@ -1051,6 +1057,11 @@ int test_layer_naive(int typeindex, const ncnn::ParamDict& pd, const std::vector
     }
     auto end = std::chrono::high_resolution_clock::now();
     std::cout << "test_layer_naive execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
+
+//    std::cout << "CPU Naive Input A:" << std::endl;
+//    ncnn::Mat::print_mat(a);
+//    std::cout << "CPU Naive Result:" << std::endl;
+//    ncnn::Mat::print_mat(b);
 
     op->destroy_pipeline(opt);
 

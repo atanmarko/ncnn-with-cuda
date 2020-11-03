@@ -165,12 +165,13 @@ int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Pa
         const ncnn::CudaMatInfo input_info{bottom_blob};
         const ncnn::CudaMatInfo output_info{top_blob};
 
-        const int thread_per_block_x = 32;
+        const int thread_per_block_x = 128;
         const int thread_per_block_y = 8;
-        const int total_number_of_columns = input_info.c * input_info.h * input_info.w;
+        const int total_number_of_columns = input_info.w;
         const int total_number_of_rows = outh;
         const dim3 block_size(thread_per_block_x, thread_per_block_y, 1);
-        const dim3 grid_size(total_number_of_columns/thread_per_block_x + 1, total_number_of_rows/thread_per_block_y+ 1,1);
+        const dim3 grid_size((total_number_of_columns - 1) / thread_per_block_x + 1,
+                             (total_number_of_rows - 1) / thread_per_block_y + 1, 1);
 
         gpu_packing_forward_2<<<grid_size, block_size>>>(static_cast<const float*>(bottom_blob.get_craw_data()),
                                                          input_info,
@@ -195,15 +196,16 @@ int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Pa
         const ncnn::CudaMatInfo input_info{bottom_blob};
         const ncnn::CudaMatInfo output_info{top_blob};
 
-        const int thread_per_block_x = 32;
+        const int thread_per_block_x = 64;
         const int thread_per_block_y = 8;
         const int thread_per_block_z = 2;
         const int total_number_of_channels = outc;
-        const int total_number_of_columns = outc * input_info.h * input_info.w;
-        const int total_number_of_rows = outc * input_info.h;
+        const int total_number_of_columns = input_info.w;
+        const int total_number_of_rows = input_info.h;
         const dim3 block_size(thread_per_block_x, thread_per_block_y, thread_per_block_z);
-        const dim3 grid_size(total_number_of_columns/thread_per_block_x + 1, total_number_of_rows/thread_per_block_y + 1,
-                             total_number_of_channels/thread_per_block_z + 1);
+        const dim3 grid_size((total_number_of_columns - 1) / thread_per_block_x + 1,
+                             (total_number_of_rows - 1) / thread_per_block_y + 1,
+                             (total_number_of_channels - 1) / thread_per_block_z + 1);
 
         gpu_packing_forward_3<<<grid_size, block_size>>>(static_cast<const float*>(bottom_blob.get_craw_data()),
                                                            input_info,
