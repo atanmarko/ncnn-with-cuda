@@ -29,7 +29,7 @@
 namespace ncnn {
 
 template<typename T>
-__global__ void copy_make_border_image_type0(const T* src, const CudaMatInfo src_info, T* dst, const CudaMatInfo dst_info,
+__global__ void gpu_copy_make_border_image_type0(const T* src, const CudaMatInfo src_info, T* dst, const CudaMatInfo dst_info,
                                              int top, int left, int type, T v)
 {
     const int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -52,7 +52,7 @@ __global__ void copy_make_border_image_type0(const T* src, const CudaMatInfo src
 }
 
 template<typename T>
-__global__ void copy_make_border_image_type1(const T* src, const CudaMatInfo src_info, T* dst, const CudaMatInfo dst_info,
+__global__ void gpu_copy_make_border_image_type1(const T* src, const CudaMatInfo src_info, T* dst, const CudaMatInfo dst_info,
                                              int top, int left, int type, T v)
 {
     const int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -97,7 +97,7 @@ __global__ void copy_make_border_image_type1(const T* src, const CudaMatInfo src
 
 
 template<typename T>
-__global__ void copy_make_border_image_type2(const T* src, const CudaMatInfo src_info, T* dst, const CudaMatInfo dst_info,
+__global__ void gpu_copy_make_border_image_type2(const T* src, const CudaMatInfo src_info, T* dst, const CudaMatInfo dst_info,
                                              int top, int left, int type, T v)
 {
     const int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -144,7 +144,7 @@ __global__ void copy_make_border_image_type2(const T* src, const CudaMatInfo src
 
 
 template<typename T>
-__global__ void copy_make_border_image_3d_type0(const T* src, const CudaMatInfo src_info, T* dst, const CudaMatInfo dst_info,
+__global__ void gpu_copy_make_border_image_3d_type0(const T* src, const CudaMatInfo src_info, T* dst, const CudaMatInfo dst_info,
                                              int front, int top, int left, int type, ncnn::GPUPaddingValue<T> values)
 {
     const int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -180,7 +180,7 @@ __global__ void copy_make_border_image_3d_type0(const T* src, const CudaMatInfo 
 }
 
 template<typename T>
-__global__ void copy_make_border_image_3d_type1(const T* src, const CudaMatInfo src_info, T* dst, const CudaMatInfo dst_info,
+__global__ void gpu_copy_make_border_image_3d_type1(const T* src, const CudaMatInfo src_info, T* dst, const CudaMatInfo dst_info,
                                                 int front, int top, int left, int type, ncnn::GPUPaddingValue<T> values)
 {
     const int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -243,7 +243,7 @@ __global__ void copy_make_border_image_3d_type1(const T* src, const CudaMatInfo 
 
 
 template<typename T>
-__global__ void copy_make_border_image_3d_type2(const T* src, const CudaMatInfo src_info, T* dst, const CudaMatInfo dst_info,
+__global__ void gpu_copy_make_border_image_3d_type2(const T* src, const CudaMatInfo src_info, T* dst, const CudaMatInfo dst_info,
                                                 int front, int top, int left, int type, ncnn::GPUPaddingValue<T> values)
 {
     const int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -328,29 +328,29 @@ int copy_make_border_image(const CudaMat& src, CudaMat& dst, int top, int left, 
         if (padding_type == PaddingVariableType::type_char)
         {
             char value_char = value.c;
-            copy_make_border_image_type0<char><<<grid_size, block_size>>>(static_cast<const char*>(src.get_craw_data()),
-                                                                            input_info,
-                                                                            static_cast<char*>(dst.get_raw_data()),
-                                                                            output_info,
-                                                                            top, left, type, value_char);
+            gpu_copy_make_border_image_type0<char><<<grid_size, block_size>>>(static_cast<const char*>(src.get_craw_data()),
+                                                                                input_info,
+                                                                                static_cast<char*>(dst.get_raw_data()),
+                                                                                output_info,
+                                                                                top, left, type, value_char);
         }
         else if (padding_type == PaddingVariableType::type_unsigned_short)
         {
             unsigned short value_unsigned_short = value.sh;
-            copy_make_border_image_type0<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(src.get_craw_data()),
-                                                                                      input_info,
-                                                                                      static_cast<unsigned short*>(dst.get_raw_data()),
-                                                                                      output_info,
-                                                                                      top, left, type, value_unsigned_short);
+            gpu_copy_make_border_image_type0<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(src.get_craw_data()),
+                                                                                          input_info,
+                                                                                          static_cast<unsigned short*>(dst.get_raw_data()),
+                                                                                          output_info,
+                                                                                          top, left, type, value_unsigned_short);
         }
         else if (padding_type == PaddingVariableType::type_float)
         {
             float value_float = value.fl;
-            copy_make_border_image_type0<float><<<grid_size, block_size>>>(static_cast<const float*>(src.get_craw_data()),
-                                                                             input_info,
-                                                                             static_cast<float*>(dst.get_raw_data()),
-                                                                             output_info,
-                                                                             top, left, type, value_float);
+            gpu_copy_make_border_image_type0<float><<<grid_size, block_size>>>(static_cast<const float*>(src.get_craw_data()),
+                                                                                 input_info,
+                                                                                 static_cast<float*>(dst.get_raw_data()),
+                                                                                 output_info,
+                                                                                 top, left, type, value_float);
         }
     }
     else if (type == 1)
@@ -358,29 +358,29 @@ int copy_make_border_image(const CudaMat& src, CudaMat& dst, int top, int left, 
         if (padding_type == PaddingVariableType::type_char)
         {
             char value_char = value.c;
-            copy_make_border_image_type1<char><<<grid_size, block_size>>>(static_cast<const char*>(src.get_craw_data()),
-                                                                            input_info,
-                                                                            static_cast<char*>(dst.get_raw_data()),
-                                                                            output_info,
-                                                                            top, left, type, value_char);
+            gpu_copy_make_border_image_type1<char><<<grid_size, block_size>>>(static_cast<const char*>(src.get_craw_data()),
+                                                                                input_info,
+                                                                                static_cast<char*>(dst.get_raw_data()),
+                                                                                output_info,
+                                                                                top, left, type, value_char);
         }
         else if (padding_type == PaddingVariableType::type_unsigned_short)
         {
             unsigned short value_unsigned_short = value.sh;
-            copy_make_border_image_type1<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(src.get_craw_data()),
-                                                                                      input_info,
-                                                                                      static_cast<unsigned short*>(dst.get_raw_data()),
-                                                                                      output_info,
-                                                                                      top, left, type, value_unsigned_short);
+            gpu_copy_make_border_image_type1<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(src.get_craw_data()),
+                                                                                          input_info,
+                                                                                          static_cast<unsigned short*>(dst.get_raw_data()),
+                                                                                          output_info,
+                                                                                          top, left, type, value_unsigned_short);
         }
         else if (padding_type == PaddingVariableType::type_float)
         {
             float value_float = value.fl;
-            copy_make_border_image_type1<float><<<grid_size, block_size>>>(static_cast<const float*>(src.get_craw_data()),
-                                                                             input_info,
-                                                                             static_cast<float*>(dst.get_raw_data()),
-                                                                             output_info,
-                                                                             top, left, type, value_float);
+            gpu_copy_make_border_image_type1<float><<<grid_size, block_size>>>(static_cast<const float*>(src.get_craw_data()),
+                                                                                 input_info,
+                                                                                 static_cast<float*>(dst.get_raw_data()),
+                                                                                 output_info,
+                                                                                 top, left, type, value_float);
         }
     }
     else if (type == 2)
@@ -388,29 +388,29 @@ int copy_make_border_image(const CudaMat& src, CudaMat& dst, int top, int left, 
         if (padding_type == PaddingVariableType::type_char)
         {
             char value_char = value.c;
-            copy_make_border_image_type2<char><<<grid_size, block_size>>>(static_cast<const char*>(src.get_craw_data()),
-                                                                          input_info,
-                                                                          static_cast<char*>(dst.get_raw_data()),
-                                                                          output_info,
-                                                                          top, left, type, value_char);
+            gpu_copy_make_border_image_type2<char><<<grid_size, block_size>>>(static_cast<const char*>(src.get_craw_data()),
+                                                                                input_info,
+                                                                                static_cast<char*>(dst.get_raw_data()),
+                                                                                output_info,
+                                                                                top, left, type, value_char);
         }
         else if (padding_type == PaddingVariableType::type_unsigned_short)
         {
             unsigned short value_unsigned_short = value.sh;
-            copy_make_border_image_type2<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(src.get_craw_data()),
-                                                                                    input_info,
-                                                                                    static_cast<unsigned short*>(dst.get_raw_data()),
-                                                                                    output_info,
-                                                                                    top, left, type, value_unsigned_short);
+            gpu_copy_make_border_image_type2<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(src.get_craw_data()),
+                                                                                          input_info,
+                                                                                          static_cast<unsigned short*>(dst.get_raw_data()),
+                                                                                          output_info,
+                                                                                          top, left, type, value_unsigned_short);
         }
         else if (padding_type == PaddingVariableType::type_float)
         {
             float value_float = value.fl;
-            copy_make_border_image_type2<float><<<grid_size, block_size>>>(static_cast<const float*>(src.get_craw_data()),
-                                                                           input_info,
-                                                                           static_cast<float*>(dst.get_raw_data()),
-                                                                           output_info,
-                                                                           top, left, type, value_float);
+            gpu_copy_make_border_image_type2<float><<<grid_size, block_size>>>(static_cast<const float*>(src.get_craw_data()),
+                                                                                 input_info,
+                                                                                 static_cast<float*>(dst.get_raw_data()),
+                                                                                 output_info,
+                                                                                 top, left, type, value_float);
         }
     }
 
@@ -446,12 +446,12 @@ int copy_make_border_image_3d(const CudaMat& src, CudaMat& dst, int front, int t
             padding_values.per_channel_pad_data_size = per_channel_pad_data_size;
             padding_values.value = value.c;
             padding_values.per_channel_values = static_cast<char*>(gpu_per_channel_padding_data);
-            copy_make_border_image_3d_type0<char><<<grid_size, block_size>>>(static_cast<const char*>(src.get_craw_data()),
-                                                                          input_info,
-                                                                          static_cast<char*>(dst.get_raw_data()),
-                                                                          output_info,
-                                                                          front, top, left, type,
-                                                                          padding_values);
+            gpu_copy_make_border_image_3d_type0<char><<<grid_size, block_size>>>(static_cast<const char*>(src.get_craw_data()),
+                                                                                   input_info,
+                                                                                   static_cast<char*>(dst.get_raw_data()),
+                                                                                   output_info,
+                                                                                   front, top, left, type,
+                                                                                   padding_values);
         }
         else if (padding_type == PaddingVariableType::type_unsigned_short)
         {
@@ -459,11 +459,11 @@ int copy_make_border_image_3d(const CudaMat& src, CudaMat& dst, int front, int t
             padding_values.per_channel_pad_data_size = per_channel_pad_data_size;
             padding_values.value = value.sh;
             padding_values.per_channel_values = static_cast<unsigned short*>(gpu_per_channel_padding_data);
-            copy_make_border_image_3d_type0<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(src.get_craw_data()),
-                                                                                    input_info,
-                                                                                    static_cast<unsigned short*>(dst.get_raw_data()),
-                                                                                    output_info,
-                                                                                    front, top, left, type, padding_values);
+            gpu_copy_make_border_image_3d_type0<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(src.get_craw_data()),
+                                                                                             input_info,
+                                                                                             static_cast<unsigned short*>(dst.get_raw_data()),
+                                                                                             output_info,
+                                                                                             front, top, left, type, padding_values);
         }
         else if (padding_type == PaddingVariableType::type_float)
         {
@@ -471,11 +471,11 @@ int copy_make_border_image_3d(const CudaMat& src, CudaMat& dst, int front, int t
             padding_values.per_channel_pad_data_size = per_channel_pad_data_size;
             padding_values.value = value.fl;
             padding_values.per_channel_values = static_cast<float*>(gpu_per_channel_padding_data);
-            copy_make_border_image_3d_type0<float><<<grid_size, block_size>>>(static_cast<const float*>(src.get_craw_data()),
-                                                                           input_info,
-                                                                           static_cast<float*>(dst.get_raw_data()),
-                                                                           output_info,
-                                                                           front, top, left, type, padding_values);
+            gpu_copy_make_border_image_3d_type0<float><<<grid_size, block_size>>>(static_cast<const float*>(src.get_craw_data()),
+                                                                                    input_info,
+                                                                                    static_cast<float*>(dst.get_raw_data()),
+                                                                                    output_info,
+                                                                                    front, top, left, type, padding_values);
         }
     }
     else if (type == 1)
@@ -486,12 +486,12 @@ int copy_make_border_image_3d(const CudaMat& src, CudaMat& dst, int front, int t
             padding_values.per_channel_pad_data_size = per_channel_pad_data_size;
             padding_values.value = value.c;
             padding_values.per_channel_values = static_cast<char*>(gpu_per_channel_padding_data);
-            copy_make_border_image_3d_type1<char><<<grid_size, block_size>>>(static_cast<const char*>(src.get_craw_data()),
-                                                                               input_info,
-                                                                               static_cast<char*>(dst.get_raw_data()),
-                                                                               output_info,
-                                                                               front, top, left, type,
-                                                                               padding_values);
+            gpu_copy_make_border_image_3d_type1<char><<<grid_size, block_size>>>(static_cast<const char*>(src.get_craw_data()),
+                                                                                   input_info,
+                                                                                   static_cast<char*>(dst.get_raw_data()),
+                                                                                   output_info,
+                                                                                   front, top, left, type,
+                                                                                   padding_values);
         }
         else if (padding_type == PaddingVariableType::type_unsigned_short)
         {
@@ -499,11 +499,11 @@ int copy_make_border_image_3d(const CudaMat& src, CudaMat& dst, int front, int t
             padding_values.per_channel_pad_data_size = per_channel_pad_data_size;
             padding_values.value = value.sh;
             padding_values.per_channel_values = static_cast<unsigned short*>(gpu_per_channel_padding_data);
-            copy_make_border_image_3d_type1<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(src.get_craw_data()),
-                                                                                       input_info,
-                                                                                       static_cast<unsigned short*>(dst.get_raw_data()),
-                                                                                       output_info,
-                                                                                       front, top, left, type, padding_values);
+            gpu_copy_make_border_image_3d_type1<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(src.get_craw_data()),
+                                                                                             input_info,
+                                                                                             static_cast<unsigned short*>(dst.get_raw_data()),
+                                                                                             output_info,
+                                                                                             front, top, left, type, padding_values);
         }
         else if (padding_type == PaddingVariableType::type_float)
         {
@@ -511,11 +511,11 @@ int copy_make_border_image_3d(const CudaMat& src, CudaMat& dst, int front, int t
             padding_values.per_channel_pad_data_size = per_channel_pad_data_size;
             padding_values.value = value.fl;
             padding_values.per_channel_values = static_cast<float*>(gpu_per_channel_padding_data);
-            copy_make_border_image_3d_type1<float><<<grid_size, block_size>>>(static_cast<const float*>(src.get_craw_data()),
-                                                                              input_info,
-                                                                              static_cast<float*>(dst.get_raw_data()),
-                                                                              output_info,
-                                                                              front, top, left, type, padding_values);
+            gpu_copy_make_border_image_3d_type1<float><<<grid_size, block_size>>>(static_cast<const float*>(src.get_craw_data()),
+                                                                                    input_info,
+                                                                                    static_cast<float*>(dst.get_raw_data()),
+                                                                                    output_info,
+                                                                                    front, top, left, type, padding_values);
         }
     }
     else if (type == 2)
@@ -526,12 +526,12 @@ int copy_make_border_image_3d(const CudaMat& src, CudaMat& dst, int front, int t
             padding_values.per_channel_pad_data_size = per_channel_pad_data_size;
             padding_values.value = value.c;
             padding_values.per_channel_values = static_cast<char*>(gpu_per_channel_padding_data);
-            copy_make_border_image_3d_type2<char><<<grid_size, block_size>>>(static_cast<const char*>(src.get_craw_data()),
-                                                                               input_info,
-                                                                               static_cast<char*>(dst.get_raw_data()),
-                                                                               output_info,
-                                                                               front, top, left, type,
-                                                                               padding_values);
+            gpu_copy_make_border_image_3d_type2<char><<<grid_size, block_size>>>(static_cast<const char*>(src.get_craw_data()),
+                                                                                   input_info,
+                                                                                   static_cast<char*>(dst.get_raw_data()),
+                                                                                   output_info,
+                                                                                   front, top, left, type,
+                                                                                   padding_values);
         }
         else if (padding_type == PaddingVariableType::type_unsigned_short)
         {
@@ -539,11 +539,11 @@ int copy_make_border_image_3d(const CudaMat& src, CudaMat& dst, int front, int t
             padding_values.per_channel_pad_data_size = per_channel_pad_data_size;
             padding_values.value = value.sh;
             padding_values.per_channel_values = static_cast<unsigned short*>(gpu_per_channel_padding_data);
-            copy_make_border_image_3d_type2<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(src.get_craw_data()),
-                                                                                       input_info,
-                                                                                       static_cast<unsigned short*>(dst.get_raw_data()),
-                                                                                       output_info,
-                                                                                       front, top, left, type, padding_values);
+            gpu_copy_make_border_image_3d_type2<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(src.get_craw_data()),
+                                                                                             input_info,
+                                                                                             static_cast<unsigned short*>(dst.get_raw_data()),
+                                                                                             output_info,
+                                                                                             front, top, left, type, padding_values);
         }
         else if (padding_type == PaddingVariableType::type_float)
         {
@@ -551,11 +551,11 @@ int copy_make_border_image_3d(const CudaMat& src, CudaMat& dst, int front, int t
             padding_values.per_channel_pad_data_size = per_channel_pad_data_size;
             padding_values.value = value.fl;
             padding_values.per_channel_values = static_cast<float*>(gpu_per_channel_padding_data);
-            copy_make_border_image_3d_type2<float><<<grid_size, block_size>>>(static_cast<const float*>(src.get_craw_data()),
-                                                                              input_info,
-                                                                              static_cast<float*>(dst.get_raw_data()),
-                                                                              output_info,
-                                                                              front, top, left, type, padding_values);
+            gpu_copy_make_border_image_3d_type2<float><<<grid_size, block_size>>>(static_cast<const float*>(src.get_craw_data()),
+                                                                                    input_info,
+                                                                                    static_cast<float*>(dst.get_raw_data()),
+                                                                                    output_info,
+                                                                                    front, top, left, type, padding_values);
         }
     }
 

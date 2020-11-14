@@ -124,7 +124,6 @@ int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Pa
         }
     }
 
-    ncnn::CudaDevice* cudev = ncnn::get_current_gpu_device();
     std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
 
     if (dims == 1)

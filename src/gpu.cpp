@@ -128,6 +128,7 @@ static int initialize_cuda_gpu_instances()
         std::cout << " Device Memory Clock Rate (KHz): " << prop.memoryClockRate << std::endl;
         std::cout << " Device Memory Bus Width (bits): " << prop.memoryBusWidth << std::endl;
         std::cout << " Device Peak Memory Bandwidth (GB/s): " << prop.memoryBusWidth << std::endl;
+        std::cout << " Device Shared Memory Per Block (GB/s): " << prop.sharedMemPerBlock << std::endl;
 
         g_cuda_gpu_infos[cuda_gpu_info_index].cuda_properties = prop;
         g_cuda_gpu_infos[cuda_gpu_info_index].type = 0; //todo differentiate types?

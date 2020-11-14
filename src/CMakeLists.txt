@@ -241,7 +241,7 @@ endif()
 
 if(NCNN_CUDA)
     if(CMAKE_BUILD_TYPE MATCHES Debug)
-        set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --debug --device-debug -O0 -lineinfo)  #For CUDA debugging
+        set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --debug --device-debug -O0 )  #For CUDA debugging
     endif()
     CUDA_ADD_LIBRARY(ncnn_cuda_lib STATIC "${ncnn_SRCS_CUDA}" )
     add_compile_definitions(NCNN_CUDA=1)

@@ -1,6 +1,7 @@
 // Tencent is pleased to support the open source community by making ncnn available.
 //
 // Copyright (C) 2020 THL A29 Limited, a Tencent company. All rights reserved.
+// Modifications Copyright (C) 2020 TANCOM SOFTWARE SOLUTIONS Ltd. All rights reserved.
 //
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
@@ -32,7 +33,6 @@ static int test_packing_gpu_fp32(const ncnn::Mat& a, int in_elempack, int out_el
     opt.use_fp16_arithmetic = false;
     opt.use_packing_layout = false;
 
-    ncnn::CudaDevice* cudev = ncnn::get_current_gpu_device();
     std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
 
     ncnn::Layer* op = ncnn::create_layer("Packing");
@@ -147,7 +147,6 @@ static int test_packing_gpu_fp16(const ncnn::Mat& a, int in_elempack, int out_el
 
     op->create_pipeline(opt);
 
-    ncnn::CudaDevice* cudev = ncnn::get_current_gpu_device();
     std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
 
 
