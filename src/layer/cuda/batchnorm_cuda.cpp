@@ -87,16 +87,10 @@ int BatchNorm_cuda::load_model(const CudaModelBinFromMatArray& mb)
 
 int BatchNorm_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& /*opt*/) const
 {
-    batchnorm_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()),
+    return batchnorm_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()),
                                    static_cast<const float*>(b_data_gpu.get_raw_data()),
                                    static_cast<const float*>(a_data_gpu.get_raw_data()),
                                    CudaMatInfo{bottom_top_blob});
-
-
-
-
-
-    return 0;
 }
 
 } // namespace ncnn

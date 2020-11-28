@@ -179,9 +179,8 @@ int Padding_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const O
 
 }
 
-int Padding_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const
+int Padding_cuda::forward(const std::vector<CudaMat>&, std::vector<CudaMat>&, const Option&) const
 {
-
     std::cout << "Padding_cuda::forward 2" << std::endl;
     return 0;
 }

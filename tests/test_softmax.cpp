@@ -39,7 +39,7 @@ static int test_softmax_0()
     ncnn::Mat c = RandomMat(3, 5, 13);
     ncnn::Mat d = RandomMat(383, 201, 35);
     ncnn::Mat f = RandomMat(526, 278, 41);
-    ncnn::Mat e = RandomMat(1920, 1280, 3);
+    ncnn::Mat e = RandomMat(1920, 1080, 3);
 
     return 0
            || test_softmax(a, 0)
@@ -92,7 +92,7 @@ static int test_softmax_1()
     ncnn::Mat b = RandomMat(17, 12);
     ncnn::Mat c = RandomMat(19, 15);
     ncnn::Mat d = RandomMat(257, 48);
-    ncnn::Mat e = RandomMat(1920, 1280);
+    ncnn::Mat e = RandomMat(1920, 1080);
 
     return 0
            || test_softmax(a, 0)

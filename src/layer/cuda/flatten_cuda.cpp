@@ -16,42 +16,42 @@
 // Parts of this file are originally copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
 
 
-#include "bias_cuda.h"
+#include "flatten_cuda.h"
 
-#include <algorithm>
 #include <chrono>
 
 namespace ncnn {
 
-int bias_cuda_forward_inplace(float* a_input, const ncnn::CudaMatInfo& a_info, const float* bias);
+int flatten_cuda_forward(const unsigned char* bottom_blob, const ncnn::CudaMatInfo bottom_blob_info,
+                         unsigned char* top_blob);
 
-Bias_cuda::Bias_cuda()
+Flatten_cuda::Flatten_cuda()
 {
     support_cuda = true;
 }
 
-
-int Bias_cuda::load_model(const CudaModelBinFromMatArray& mb)
+int Flatten_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option&) const
 {
-    if (!this->support_cuda)
-        return -100;
 
+    CudaMatInfo bottom_blob_info{bottom_blob};
+
+    int w = bottom_blob.w;
+    int h = bottom_blob.h;
+    int channels = bottom_blob.c;
+    size_t elemsize = bottom_blob.elemsize;
+    int size = w * h;
 
     std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
-    bias_data = CudaMat{mb.load(bias_data_size, 1), cuda_allocator};
-    if (bias_data.empty())
+    top_blob.create(size * channels, elemsize, cuda_allocator);
+    if (top_blob.empty())
         return -100;
 
-    return 0;
-}
 
-int Bias_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt __attribute__((unused))) const
-{
-    CudaMatInfo a_info{bottom_top_blob};
-
-    return bias_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()), a_info,
-                              static_cast<const float*>(bias_data.get_craw_data()));
+    return flatten_cuda_forward(
+        static_cast<const unsigned char*>(bottom_blob.get_craw_data()),
+        bottom_blob_info,
+        static_cast<unsigned char*>(top_blob.get_raw_data())
+        );
 }
 
 } // namespace ncnn

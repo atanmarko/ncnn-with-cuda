@@ -98,12 +98,6 @@ int Softmax::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
             }
         }
 
-//        for (int j = 0; j < w; j++) {
-//            std::cout << "NAIVE Checkpoint MAX column:" << j << " sum value: " << max[j] << std::endl;
-//        }
-
-
-
         Mat sum;
         sum.create(w, elemsize, opt.workspace_allocator);
         if (sum.empty())
@@ -119,10 +113,6 @@ int Softmax::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
                 sum[j] += ptr[j];
             }
         }
-
-//        for (int j = 0; j < w; j++) {
-//            std::cout << "NAIVE Checkpoint SUM column:" << j << " sum value: " << sum[j] << std::endl;
-//        }
 
         for (int i = 0; i < h; i++)
         {
@@ -149,19 +139,13 @@ int Softmax::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
             {
                 m = std::max(m, ptr[j]);
             }
-//            std::cout << "NAIVE Checkpoint MAC: " << i << " max value: " << m << std::endl;
 
             float s = 0.f;
             for (int j = 0; j < w; j++)
             {
                 ptr[j] = static_cast<float>(exp(ptr[j] - m));
                 s += ptr[j];
-//                if (i == 8) {
-//                    std::cout << "NAIVE Checkpoint SUM [: " << i << ","<<j << "] one value: " << ptr[j] << " max value: " << m <<  std::endl;
-//                }
             }
-
-//            std::cout << "NAIVE Checkpoint SUM: " << i << " sum value: " << s << std::endl;
 
             for (int j = 0; j < w; j++)
             {
@@ -194,12 +178,6 @@ int Softmax::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
             }
         }
 
-//        for (int j = 0; j < h; j++)
-//            for (int i = 0; i < w; i++)
-//        {
-//            std::cout << "NAIVE Checkpoint MAX channel:" << " row: " << j << " column: " << i << " max value: " << max[j*w+i] << std::endl;
-//        }
-
         Mat sum;
         sum.create(w, h, elemsize, opt.workspace_allocator);
         if (sum.empty())
@@ -213,16 +191,8 @@ int Softmax::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
             {
                 ptr[i] = static_cast<float>(exp(ptr[i] - max[i]));
                 sum[i] += ptr[i];
-//                if (i == 5)
-//                std::cout << "NAIVE ZERO Checkpoint SUM channel itteration:" <<q << " sum value: " << sum[i] << " max:" << max[i] << " ptr:" << ptr[i] << std::endl;
             }
         }
-
-//        for (int j = 0; j < h; j++)
-//            for (int i = 0; i < w; i++)
-//            {
-//                std::cout << "NAIVE Checkpoint SUM channel:" << " row: " << j << " column: " << i << " max value: " << sum[j*w+i] << std::endl;
-//            }
 
         #pragma omp parallel for num_threads(opt.num_threads)
         for (int q = 0; q < channels; q++)
@@ -232,8 +202,6 @@ int Softmax::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
             for (int i = 0; i < size; i++)
             {
                 ptr[i] /= sum[i];
-//                if (i == 5)
-//                    std::cout << "REZULT Checkpoint SUM channel channel:" <<q << " sum value: " << sum[i] << " ptr:" << ptr[i] << std::endl;
             }
         }
 
@@ -268,15 +236,6 @@ int Softmax::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
             }
         }
 
-//        for (int q = 0; q < channels; q++)
-//        {
-//            float* maxptr = max.row(q);
-//            for (int j = 0; j < w; j++)
-//            {
-//                    std::cout << "NAIVE Checkpoint MAX channel: " << q << " column: " << j << " sum value: " << maxptr[j] << std::endl;
-//            }
-//        }
-
         Mat sum;
         sum.create(w, channels, elemsize, opt.workspace_allocator);
         if (sum.empty())
@@ -295,26 +254,9 @@ int Softmax::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
                 {
                     ptr[j] = static_cast<float>(exp(ptr[j] - maxptr[j]));
                     sumptr[j] += ptr[j];
-
-//                    if (q == 0 && (j ==0))
-//                        std::cout << "NAIVE Checkpoint SUM REDUCTION channel: " << q <<
-//                                  " row: " << i << " column: " << j << " sum value: " << sumptr[j] << " ptr[j]: " << ptr[j] <<  std::endl;
                 }
 
-
-
                 ptr += w;
-            }
-        }
-
-        for (int q = 0; q < channels; q++)
-        {
-            float* sumptr = sum.row(q);
-            for (int j = 0; j < w; j++)
-            {
-//                if (q == 0)
-//                std::cout << "NAIVE Checkpoint SUM channel: " << q <<
-//                          " column: " << j << " sum value: " << sumptr[j] << std::endl;
             }
         }
 
@@ -328,12 +270,7 @@ int Softmax::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
             {
                 for (int j = 0; j < w; j++)
                 {
-
                     ptr[j] /= sumptr[j];
-
-//                    if (i == 0 && j == 2)
-//                    std::cout << "NAIVE Checkpoint RESULT channel: " << q <<
-//                              " column:" << j << " sum value: " << sumptr[j] << " result: " << ptr[j] <<  std::endl;
                 }
 
                 ptr += w;
@@ -361,8 +298,6 @@ int Softmax::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
                 {
                     max = std::max(max, ptr[j]);
                 }
-//                std::cout << "NAIVE Checkpoint MAX channel: " << q << " row: " << i << " max value: " << max << std::endl;
-
 
                 float sum = 0.f;
                 for (int j = 0; j < w; j++)
@@ -370,7 +305,6 @@ int Softmax::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
                     ptr[j] = static_cast<float>(exp(ptr[j] - max));
                     sum += ptr[j];
                 }
-                //std::cout << "NAIVE Checkpoint SUM channel: " << q << " row: " << i << " sum value: " << sum << std::endl;
 
                 for (int j = 0; j < w; j++)
                 {
