@@ -30,6 +30,8 @@ public:
 
     virtual int load_param(const ParamDict& pd);
 
+    using Packing::forward;
+
     virtual int forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const;
 
     struct packing_options {

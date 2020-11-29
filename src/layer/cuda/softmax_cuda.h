@@ -33,6 +33,8 @@ public:
 
     virtual int load_param(const ParamDict& pd);
 
+    using Softmax::forward_inplace;
+
     virtual int forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const;
 
 private:

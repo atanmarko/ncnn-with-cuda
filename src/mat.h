@@ -396,7 +396,7 @@ public:
     int elembits() const;
 
     // shape only
-    Mat shape() const;
+    CudaMat shape() const;
 
     // data reference
     CudaMat channel(int c);
@@ -416,6 +416,9 @@ public:
     const CudaMat row_range(int y, int rows) const;
     CudaMat range(int x, int n);
     const CudaMat range(int x, int n) const;
+
+    template<typename T>
+    std::shared_ptr<T> copy_gpu_data() const;
 
     // access raw data
     template<typename T>
@@ -2583,6 +2586,15 @@ inline size_t CudaMat::total() const
     return cstep * c;
 }
 
+template<typename T>
+std::shared_ptr<T> CudaMat::copy_gpu_data() const
+{
+    std::shared_ptr<T> cpu_data = std::make_shared<T>(total());
+
+    checkCudaErrors(cudaMemcpy(static_cast<void*>(cpu_data.get()), data, total() * elemsize, cudaMemcpyDeviceToHost));
+    return cpu_data;
+}
+
 // copy from host
 inline CudaMat::CudaMat(const Mat& m, std::shared_ptr<ncnn::CudaAllocator> _allocator)
     : refcount(0), elemsize(m.elemsize), elempack(m.elempack), dims(m.dims), w(m.w), h(m.h), c(m.c), cstep(m.cstep)
@@ -2608,6 +2620,24 @@ inline CudaMat::CudaMat(const CudaMat& m)
 {
     if (refcount)
         NCNN_XADD(refcount.get(), 1);
+}
+
+inline CudaMat::CudaMat(int _w, void* _data, size_t _elemsize, std::shared_ptr<CudaAllocator> _allocator)
+    : data(_data), refcount(0), elemsize(_elemsize), elempack(1), allocator(_allocator), dims(1), w(_w), h(1), c(1)
+{
+    cstep = w;
+}
+
+inline CudaMat::CudaMat(int _w, int _h, void* _data, size_t _elemsize, std::shared_ptr<CudaAllocator> _allocator)
+    : data(_data), refcount(0), elemsize(_elemsize), elempack(1), allocator(_allocator), dims(2), w(_w), h(_h), c(1)
+{
+    cstep = w * h;
+}
+
+inline CudaMat::CudaMat(int _w, int _h, int _c, void* _data, size_t _elemsize, std::shared_ptr<CudaAllocator> _allocator)
+    : data(_data), refcount(0), elemsize(_elemsize), elempack(1), allocator(_allocator), dims(3), w(_w), h(_h), c(_c)
+{
+    cstep = alignSize(w * h * elemsize, 16) / elemsize;
 }
 
 inline void CudaMat::release()
@@ -2774,6 +2804,8 @@ inline void CudaMat::create(int _w, int _h, int _c, size_t _elemsize, std::share
 }
 
 
+
+
 inline void CudaMat::create(int _w, int _h, size_t _elemsize, std::shared_ptr<CudaAllocator> _allocator)
 {
     if (dims == 2 && w == _w && h == _h && elemsize == _elemsize && elempack == 1 && allocator == _allocator)
@@ -2864,6 +2896,18 @@ inline CudaMat& CudaMat::operator=(const CudaMat& m)
 inline bool CudaMat::empty() const
 {
     return data == nullptr || total() == 0;
+}
+
+inline CudaMat CudaMat::shape() const
+{
+    if (dims == 1)
+        return CudaMat(w * elempack, (void*)0);
+    if (dims == 2)
+        return CudaMat(w, h * elempack, (void*)0);
+    if (dims == 3)
+        return CudaMat(w, h, c * elempack, (void*)0);
+
+    return CudaMat();
 }
 
 #endif

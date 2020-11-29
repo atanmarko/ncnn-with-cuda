@@ -186,7 +186,6 @@ int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Pa
     {
         int outc = (channels * elempack + options.out_elempack - 1) / options.out_elempack;
         size_t out_elemsize = elemsize / elempack * options.out_elempack;
-        size_t lane_size = out_elemsize / options.out_elempack;
 
         top_blob.create(w, h, outc, out_elemsize, options.out_elempack, cuda_allocator);
         if (top_blob.empty())

@@ -162,7 +162,7 @@ void ncnn_option_set_num_threads(ncnn_option_t opt, int num_threads)
     ((Option*)opt)->num_threads = num_threads;
 }
 
-int ncnn_option_get_use_vulkan_compute(ncnn_option_t opt)
+int ncnn_option_get_use_vulkan_compute(ncnn_option_t)
 {
 #if NCNN_VULKAN
     return ((Option*)opt)->use_vulkan_compute;

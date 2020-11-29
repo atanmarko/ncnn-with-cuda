@@ -16,60 +16,48 @@
 // Parts of this file are originally copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
 
 
-#ifndef LAYER_PADDING_CUDA_H
-#define LAYER_PADDING_CUDA_H
+#ifndef LAYER_CROP_CUDA_H
+#define LAYER_CROP_CUDA_H
 
-#include "padding.h"
+#include "crop.h"
 
 namespace ncnn {
 
-enum class PaddingVariableType
-{
-    type_char = 0,
-    type_unsigned_short  = 1,
-    type_float = 2
-};
-
-union PaddingValue {
-    char c;
-    unsigned short sh;
-    float fl;
-};
-
-template<typename T>
-struct GPUPaddingValue {
-    T* per_channel_values;
-    T value;
-    int per_channel_pad_data_size{0};
-};
-
-class Padding_cuda : virtual public Padding
+class Crop_cuda : virtual public Crop
 {
 public:
-    Padding_cuda();
+    struct Crop_info
+    {
+        Crop_info(int _woffset, int _hoffset, int _coffset, int _outw, int _outh, int _outc)
+            : woffset(_woffset), hoffset(_hoffset), coffset(_coffset), outw(_outw), outh(_outh), outc(_outc)
+        {
+        }
 
-    ~Padding_cuda();
+        int woffset;
+        int hoffset;
+        int coffset;
+        int outw;
+        int outh;
+        int outc;
+    };
+
+    Crop_cuda();
 
     virtual int load_param(const ParamDict& pd);
 
-    using Padding::load_model;
-
-    virtual int load_model(const CudaModelBinFromMatArray& pd);
-
-    using Padding::forward;
+    using Crop::forward;
 
     virtual int forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const;
 
     virtual int forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const;
 
-    CudaMat gpu_per_channel_pad_data;
-    char* gpu_per_channel_pad_data_char{nullptr};
-    unsigned short* gpu_per_channel_pad_data_unsigned_short{nullptr};
-    unsigned short* gpu_per_channel_pad_data_unsigned_short_use_fp16{nullptr};
-    float* gpu_per_channel_pad_data_float{nullptr};
+protected:
+    void resolve_crop_roi(const CudaMat& bottom_blob, int& woffset, int& hoffset, int& coffset, int& outw, int& outh, int& outc) const;
+    void resolve_crop_roi(const CudaMat& bottom_blob, const CudaMat& reference_blob, int& woffset, int& hoffset, int& coffset, int& outw, int& outh, int& outc) const;
+    void resolve_crop_roi(const CudaMat& bottom_blob, const int* param_data, int& woffset, int& hoffset, int& coffset, int& outw, int& outh, int& outc) const;
 
 };
 
 } // namespace ncnn
 
-#endif // LAYER_PADDING_CUDA_H
+#endif // LAYER_CROP_CUDA_H

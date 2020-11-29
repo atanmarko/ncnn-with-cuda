@@ -26,6 +26,8 @@ public:
 
     virtual int load_param(const ParamDict& pd);
 
+    using Layer::forward_inplace;
+
     virtual int forward_inplace(Mat& bottom_top_blob, const Option& opt) const;
 
 public:
