@@ -50,8 +50,8 @@ int Crop_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<Cud
     const CudaMat& reference_blob = bottom_blobs[1];
     CudaMat& top_blob = top_blobs[0];
 
-    int _woffset, _hoffset, _coffset;
-    int _outw, _outh, _outc;
+    int _woffset{0}, _hoffset{0}, _coffset{0};
+    int _outw{0}, _outh{0}, _outc{0};
     if (woffset == -233)
     {
         std::shared_ptr<int> reference_blob_data = reference_blob.copy_gpu_data<int>();

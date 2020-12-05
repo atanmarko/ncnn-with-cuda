@@ -2910,6 +2910,102 @@ inline CudaMat CudaMat::shape() const
     return CudaMat();
 }
 
+
+int reshape_cuda_mat(const ncnn::CudaMat& input, ncnn::CudaMat& output, int type);
+
+inline CudaMat CudaMat::reshape(int _w, std::shared_ptr<CudaAllocator> _allocator) const
+{
+    if (w * h * c != _w)
+        return CudaMat();
+
+    if (dims == 3 && cstep != (size_t)w * h)
+    {
+        CudaMat m;
+        m.create(_w, elemsize, elempack, _allocator);
+
+        // flatten
+        reshape_cuda_mat(*this, m, 1);
+
+        return m;
+    }
+
+    CudaMat m = *this;
+
+    m.dims = 1;
+    m.w = _w;
+    m.h = 1;
+    m.c = 1;
+
+    m.cstep = _w;
+
+    return m;
+}
+
+inline CudaMat CudaMat::reshape(int _w, int _h, std::shared_ptr<CudaAllocator> _allocator) const
+{
+    if (w * h * c != _w * _h)
+        return CudaMat();
+
+    if (dims == 3 && cstep != (size_t)w * h)
+    {
+        CudaMat m;
+        m.create(_w, _h, elemsize, elempack, _allocator);
+
+        // flatten
+        reshape_cuda_mat(*this, m, 1);
+
+        return m;
+    }
+
+    CudaMat m = *this;
+
+    m.dims = 2;
+    m.w = _w;
+    m.h = _h;
+    m.c = 1;
+
+    m.cstep = _w * _h;
+
+    return m;
+}
+
+inline CudaMat CudaMat::reshape(int _w, int _h, int _c,std::shared_ptr<CudaAllocator> _allocator) const
+{
+    if (w * h * c != _w * _h * _c)
+        return CudaMat();
+
+    if (dims < 3)
+    {
+        if ((size_t)_w * _h != alignSize(_w * _h * elemsize, 16) / elemsize)
+        {
+            CudaMat m;
+            m.create(_w, _h, _c, elemsize, elempack, _allocator);
+
+            // align channel
+            reshape_cuda_mat(*this, m, 2);
+
+            return m;
+        }
+    }
+    else if (c != _c)
+    {
+        // flatten and then align
+        CudaMat tmp = reshape(_w * _h * _c, _allocator);
+        return tmp.reshape(_w, _h, _c, _allocator);
+    }
+
+    CudaMat m = *this;
+
+    m.dims = 3;
+    m.w = _w;
+    m.h = _h;
+    m.c = _c;
+
+    m.cstep = alignSize(_w * _h * elemsize, 16) / elemsize;
+
+    return m;
+}
+
 #endif
 
 } // namespace ncnn

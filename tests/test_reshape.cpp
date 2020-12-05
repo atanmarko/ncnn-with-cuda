@@ -244,6 +244,24 @@ static int test_reshape_11()
            || test_reshape_permute(a, -1, -233, -233);
 }
 
+
+static int test_reshape_12()
+{
+    ncnn::Mat a = RandomMat(1920, 1080, 3);
+
+    return 0
+           || test_reshape_permute(a, 1080, 1920, 3)
+           || test_reshape_permute(a, 1920, 3, 1080)
+           || test_reshape_permute(a, 3, 1080, 1920)
+           || test_reshape_permute(a, 960, 540, -1)
+           || test_reshape_permute(a, -1, 3, 960)
+           || test_reshape_permute(a, -1, 1920, -233)
+           || test_reshape_permute(a, 3840, -1, -233)
+           || test_reshape_permute(a, 3840, 1620, -233)
+           || test_reshape_permute(a, -1, -233, -233)
+               ;
+}
+
 int main()
 {
     SRAND(7767517);
@@ -260,5 +278,8 @@ int main()
            || test_reshape_8()
            || test_reshape_9()
            || test_reshape_10()
-           || test_reshape_11();
+           || test_reshape_11()
+           || test_reshape_12()
+
+        ;
 }
