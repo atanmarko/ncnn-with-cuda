@@ -929,6 +929,7 @@ void dequantize_int32_to_float32(Mat& m, float scale, const float* bias, int bia
 void requantize_int8_to_int8(const Mat& src, Mat& dst, float scale_in, float scale_out, const float* bias, int bias_data_size, int fusion_relu, const Option& opt = Option());
 
 #if NCNN_CUDA
+void copy_make_border(const CudaMat& src, CudaMat& dst, int top, int bottom, int left, int right, int type, float v, const Option& opt = Option());
 void convert_packing(const CudaMat& src, CudaMat& dst, int _elempack, const Option& opt = Option());
 void cast_float32_to_float16(const CudaMat& src, CudaMat& dst, const Option& opt = Option());
 void cast_float16_to_float32(const CudaMat& src, CudaMat& dst, const Option& opt = Option());

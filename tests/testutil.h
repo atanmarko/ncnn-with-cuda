@@ -616,8 +616,8 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
     if (op->use_int8_inference)
     {
         // NOTE skip int8 on gpu
-        delete op;
-        return 233;
+//        delete op;
+//        return 233;
     }
 
     ncnn::Option opt = _opt;
@@ -785,8 +785,8 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
     if (op->use_int8_inference)
     {
         // NOTE skip int8 on gpu
-        delete op;
-        return 233;
+//        delete op;
+//        return 233;
     }
 
     std::shared_ptr<ncnn::CudaAllocator> cuda_allocator{new ncnn::CudaAllocator(cudev)};

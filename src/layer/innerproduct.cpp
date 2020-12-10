@@ -107,6 +107,7 @@ int InnerProduct::forward(const Mat& bottom_blob, Mat& top_blob, const Option& o
     if (top_blob.empty())
         return -100;
 
+//    printf("------------------------------------------------------------\n");
     // num_output
     #pragma omp parallel for num_threads(opt.num_threads)
     for (int p = 0; p < num_output; p++)
@@ -116,16 +117,39 @@ int InnerProduct::forward(const Mat& bottom_blob, Mat& top_blob, const Option& o
         if (bias_term)
             sum = bias_data[p];
 
+//        printf("CPU BIAS num_output: %d bias_data[p]: %f\n", p, bias_data[p]);
+
         // channels
+        float row_sum = 0;
         for (int q = 0; q < channels; q++)
         {
             const float* w = (const float*)weight_data + size * channels * p + size * q;
             const float* m = bottom_blob.channel(q);
 
+            int current_row = 0;
+
             for (int i = 0; i < size; i++)
             {
+                int row = i / bottom_blob.w;
+                int column = i % bottom_blob.w;
+                if (current_row != row) {
+//                    printf("CPU ROW_SUM: num_output: %d channel: %d row: %d row sum: %f\n", p,
+//                           q, row-1, sum - row_sum);
+                    row_sum = sum;
+                    current_row = row;
+                }
+
                 sum += m[i] * w[i];
+                float weighted_element = m[i] * w[i];
+
+
+//                printf("CPU: num_output: %d channel: %d row: %d column:%d m[i]: %f  w[i]: %f  weighted_element: %f sum: %f\n",
+//                       p, q, row, column, i, m[i], w[i], weighted_element, sum);
+
             }
+//            printf("CPU ROW_SUM: channel: %d  row sum: %f\n",
+//                   q, sum - row_sum);
+            row_sum = sum;
         }
         if (activation_type == 1)
         {

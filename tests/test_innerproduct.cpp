@@ -53,7 +53,8 @@ static int test_innerproduct_0()
            || test_innerproduct(RandomMat(4, 3, 15), 8, 1)
            || test_innerproduct(RandomMat(6, 2, 16), 16, 1)
            || test_innerproduct(RandomMat(6, 2, 16), 7, 1)
-           || test_innerproduct(RandomMat(6, 2, 5), 16, 1);
+           || test_innerproduct(RandomMat(6, 2, 5), 16, 1)
+        ;
 }
 
 static int test_innerproduct_1()
@@ -133,6 +134,23 @@ static int test_innerproduct_3()
            || test_innerproduct_int8(RandomMat(6, 3, 16), 16, 1);
 }
 
+static int test_innerproduct_4()
+{
+    return 0
+           || test_innerproduct(RandomMat(1280, 720, 3), 1, 1)
+           || test_innerproduct(RandomMat(1280, 720, 3), 2, 1)
+           || test_innerproduct(RandomMat(1280, 720, 3), 3, 1)
+           || test_innerproduct(RandomMat(1280, 720, 3), 12, 1)
+           || test_innerproduct(RandomMat(1920, 1080, 3), 4, 1)
+           || test_innerproduct(RandomMat(1920, 1080, 3), 7, 1)
+           || test_innerproduct(RandomMat(1920, 1080, 3), 3, 1)
+           || test_innerproduct(RandomMat(1920, 1080, 3), 8, 1)
+           || test_innerproduct(RandomMat(1920, 1080, 3), 15, 1)
+           || test_innerproduct(RandomMat(1920, 1080, 3), 4, 1)
+           || test_innerproduct(RandomMat(1920, 1080, 3), 16, 1);
+        ;
+}
+
 int main()
 {
     SRAND(7767517);
@@ -141,5 +159,7 @@ int main()
            || test_innerproduct_0()
            || test_innerproduct_1()
            || test_innerproduct_2()
-           || test_innerproduct_3();
+           || test_innerproduct_3()
+           || test_innerproduct_4()
+        ;
 }
