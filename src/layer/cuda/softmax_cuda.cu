@@ -470,7 +470,9 @@ int softmax_cuda_forward_inplace(float* a_input, const ncnn::CudaMatInfo& a_info
                                  float* gpu_scratchpad_memory,
                                  int gpu_scratchpad_memory_size)
 {
-    if ((a_info.dims == 1) || (a_info.dims == 2 && axis == 1) || (a_info.dims == 3 && axis == 2)) {
+    int positive_axis = axis < 0 ? a_info.dims + axis : axis;
+
+    if ((a_info.dims == 1) || (a_info.dims == 2 && positive_axis == 1) || (a_info.dims == 3 && positive_axis == 2)) {
         checkCudaErrors(cudaMemset(gpu_scratchpad_memory, 0, gpu_scratchpad_memory_size));
         int thread_per_block_x = ((a_info.w - 1) / 64 + 1) * 64;
         if (thread_per_block_x > 128) thread_per_block_x = 128;
@@ -502,7 +504,7 @@ int softmax_cuda_forward_inplace(float* a_input, const ncnn::CudaMatInfo& a_info
 
         gpu_softmax_divide_elements_row<<<grid_size, block_size>>>(a_input, a_info, gpu_scratchpad_memory);
 
-    } else if ((a_info.dims == 2 && axis == 0) || (a_info.dims == 3 && axis == 1)) {
+    } else if ((a_info.dims == 2 && positive_axis == 0) || (a_info.dims == 3 && positive_axis == 1)) {
         checkCudaErrors(cudaMemset(gpu_scratchpad_memory, 0, gpu_scratchpad_memory_size));
         int thread_per_block_x = ((a_info.w - 1) / 64 + 1) * 64;
         if (thread_per_block_x > 128) thread_per_block_x = 128;
@@ -535,7 +537,7 @@ int softmax_cuda_forward_inplace(float* a_input, const ncnn::CudaMatInfo& a_info
 
         gpu_softmax_divide_elements_column<<<grid_size, block_size>>>(a_input, a_info, gpu_scratchpad_memory);
 
-    }  else if (a_info.dims == 3 && axis == 0) {
+    }  else if (a_info.dims == 3 && positive_axis == 0) {
         checkCudaErrors(cudaMemset(gpu_scratchpad_memory, 0, gpu_scratchpad_memory_size));
         int thread_per_block_x = ((a_info.w - 1) / 64 + 1) * 64;
         if (thread_per_block_x > 128) thread_per_block_x = 128;
@@ -552,33 +554,21 @@ int softmax_cuda_forward_inplace(float* a_input, const ncnn::CudaMatInfo& a_info
                              1);
         gpu_softmax_reduce_find_max_channel<<<grid_size, block_size>>>(a_input, a_info, gpu_scratchpad_memory);
 
-        cudaDeviceSynchronize();
-        checkCudaErrors(cudaGetLastError());
-
         const dim3 block_size_calculate(thread_per_block_x, thread_per_block_y, thread_per_block_z);
         const dim3 grid_size_calculate((total_number_of_columns - 1) / thread_per_block_x + 1,
                              (total_number_of_rows - 1) / thread_per_block_y + 1, total_number_of_channels);
         gpu_softmax_reduce_calculates_elements_channel<<<grid_size_calculate, block_size_calculate>>>(a_input, a_info, gpu_scratchpad_memory);
-
-        cudaDeviceSynchronize();
-        checkCudaErrors(cudaGetLastError());
 
         const dim3 block_size_sum(thread_per_block_x, thread_per_block_y, 1);
         const dim3 grid_size_sum((total_number_of_columns - 1) / thread_per_block_x + 1,
                                        (total_number_of_rows - 1) / thread_per_block_y + 1, 1);
         gpu_softmax_reduce_sum_elements_channel<<<grid_size_sum, block_size_sum>>>(a_input, a_info, gpu_scratchpad_memory);
 
-        cudaDeviceSynchronize();
-        checkCudaErrors(cudaGetLastError());
-
         const dim3 block_size_div(thread_per_block_x, thread_per_block_y, thread_per_block_z);
         const dim3 grid_size_div((total_number_of_columns - 1) / thread_per_block_x + 1,
                              (total_number_of_rows - 1) / thread_per_block_y + 1,
                                  (total_number_of_channels - 1) / thread_per_block_z + 1);
         gpu_softmax_divide_elements_channel<<<grid_size_div, block_size_div>>>(a_input, a_info, gpu_scratchpad_memory);
-
-        cudaDeviceSynchronize();
-        checkCudaErrors(cudaGetLastError());
     }
 
 

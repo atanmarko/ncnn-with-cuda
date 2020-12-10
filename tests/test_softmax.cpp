@@ -161,5 +161,7 @@ int main()
     return 0
            || test_softmax_0()
            || test_softmax_1()
-           || test_softmax_2();
+           || test_softmax_2()
+           || test_softmax_gpu()
+        ;
 }
