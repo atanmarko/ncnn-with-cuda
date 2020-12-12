@@ -52,7 +52,7 @@ int Padding_cuda::load_param(const ParamDict& pd)
 
 int Padding_cuda::load_model(const CudaModelBinFromMatArray& pd)
 {
-    Padding::load_model(pd);
+    Padding::load_model(static_cast<const ModelBinFromMatArray>(pd));
 
     std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
     gpu_per_channel_pad_data = CudaMat{per_channel_pad_data, cuda_allocator};
