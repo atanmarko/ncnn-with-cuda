@@ -98,7 +98,7 @@ int crop_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Crop_
     }
     else if (input_dims == 2)
     {
-        if (crop_info.outw == input_w && crop_info.outw == input_h)
+        if (crop_info.outw == input_w && crop_info.outh == input_h)
         {
             top_blob = bottom_blob;
             return 0;
@@ -145,19 +145,22 @@ int crop_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Crop_
                                                                                bottom_blob_info,
                                                                                static_cast<signed char*>(top_blob.get_raw_data()),
                                                                                top_blob_info,
-                                                                               crop_info.hoffset, crop_info.woffset, crop_info.coffset);
+                                                                               crop_info.hoffset, crop_info.woffset,
+                                                                               (crop_info.coffset < 0 ? 0 : crop_info.coffset));
     if (input_elemsize == 2)
         gpu_crop_copy_cut_border_image<unsigned short><<<grid_size, block_size>>>(static_cast<const unsigned short*>(bottom_blob.get_craw_data()),
                                                                                   bottom_blob_info,
                                                                                   static_cast<unsigned short*>(top_blob.get_raw_data()),
                                                                                   top_blob_info,
-                                                                                  crop_info.hoffset, crop_info.woffset, crop_info.coffset);
+                                                                                  crop_info.hoffset, crop_info.woffset,
+                                                                                  (crop_info.coffset < 0 ? 0 : crop_info.coffset));
     if (input_elemsize == 4)
         gpu_crop_copy_cut_border_image<float><<<grid_size, block_size>>>(static_cast<const float*>(bottom_blob.get_craw_data()),
-                                                                         bottom_blob_info,
-                                                                         static_cast<float*>(top_blob.get_raw_data()),
-                                                                         top_blob_info,
-                                                                         crop_info.hoffset, crop_info.woffset, crop_info.coffset);
+                                                                           bottom_blob_info,
+                                                                           static_cast<float*>(top_blob.get_raw_data()),
+                                                                           top_blob_info,
+                                                                           crop_info.hoffset, crop_info.woffset,
+                                                                         (crop_info.coffset < 0 ? 0 : crop_info.coffset));
 
     return 0;
 }

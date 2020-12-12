@@ -393,6 +393,13 @@ int test_layer_cpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
         }
     }
 
+//    std::cout << "Input A CPU:" << std::endl;
+//    ncnn::Mat::print_mat(a[0]);
+//    std::cout << "Input B CPU:" << std::endl;
+//    ncnn::Mat::print_mat(a[1]);
+//    std::cout << "Result CPU:" << std::endl;
+//    ncnn::Mat::print_mat(c[0]);
+
     op->destroy_pipeline(opt);
 
     delete op;
@@ -891,15 +898,6 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
 
     d[0] = d_gpu[0];
 
-
-//    std::cout << "Input A:" << std::endl;
-//    ncnn::Mat::print_mat(a[0]);
-//    std::cout << "Input B:" << std::endl;
-//    ncnn::Mat::print_mat(a[1]);
-//    std::cout << "Result:" << std::endl;
-//    ncnn::Mat::print_mat(d[0]);
-
-
     if (opt.use_fp16_storage)
     {
         for (size_t i = 0; i < d.size(); i++)
@@ -918,6 +916,13 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
             d[i] = c_fp32;
         }
     }
+
+//    std::cout << "Input A GPU:" << std::endl;
+//    ncnn::Mat::print_mat(a[0]);
+//    std::cout << "Input B GPU:" << std::endl;
+//    ncnn::Mat::print_mat(a[1]);
+//    std::cout << "Result GPU:" << std::endl;
+//    ncnn::Mat::print_mat(d[0]);
 
     op->destroy_pipeline(opt);
 

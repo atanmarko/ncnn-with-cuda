@@ -38,7 +38,7 @@ int Crop_cuda::load_param(const ParamDict& pd)
 int Crop_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option&) const
 {
     int _woffset, _hoffset, _coffset;
-    int _outw, _outh, _outc;
+    int _outw{-1}, _outh{-1}, _outc;
     resolve_crop_roi(bottom_blob.shape(), _woffset, _hoffset, _coffset, _outw, _outh, _outc);
 
     return crop_cuda_forward(bottom_blob, top_blob, Crop_info{_woffset, _hoffset, _coffset, _outw, _outh, _outc});
@@ -50,8 +50,8 @@ int Crop_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<Cud
     const CudaMat& reference_blob = bottom_blobs[1];
     CudaMat& top_blob = top_blobs[0];
 
-    int _woffset{0}, _hoffset{0}, _coffset{0};
-    int _outw{0}, _outh{0}, _outc{0};
+    int _woffset{0}, _hoffset{0}, _coffset{-1};
+    int _outw{-1}, _outh{-1}, _outc{0};
     if (woffset == -233)
     {
         std::shared_ptr<int> reference_blob_data = reference_blob.copy_gpu_data<int>();
@@ -238,7 +238,7 @@ void Crop_cuda::resolve_crop_roi(const CudaMat& bottom_blob, int& _woffset, int&
                 if (outh != -233)
                     _outh = std::min(outh, _outh);
 
-                _outc = channels - coffset2 - coffset2;
+                _outc = channels - coffset - coffset2;
                 if (outc != -233)
                     _outc = std::min(outc, _outc);
             }
