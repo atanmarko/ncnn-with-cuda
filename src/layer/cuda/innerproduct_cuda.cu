@@ -64,11 +64,6 @@ __global__ void gpu_innerproduct_cuda_forward(const float* a_input, const ncnn::
     float temp = buffer[shared_mem_index];
     buffer[shared_mem_index] = buffer[shared_mem_index] * (*weight_ptr);
 
-//    if (channel == 0 && row == 0 && column == 0 && product_info.bias_term)
-//    {
-//        buffer[shared_mem_index] += bias_input[num_output];
-//    }
-
     __syncthreads();
 
     const int reduction_width = blockWidth;
