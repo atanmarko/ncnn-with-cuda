@@ -64,17 +64,10 @@ __global__ void gpu_innerproduct_cuda_forward(const float* a_input, const ncnn::
     float temp = buffer[shared_mem_index];
     buffer[shared_mem_index] = buffer[shared_mem_index] * (*weight_ptr);
 
-    if (channel == 0 && row == 0 && column == 0 && product_info.bias_term)
-    {
-        buffer[shared_mem_index] += bias_input[num_output];
-//        printf("GPU BIAS: num_output: %d channel: %d row: %d column %d bias: %f\n", num_output,
-//               channel, row, column, bias_input[num_output]);
-    }
-
-//    if (num_output == 2 && channel == 0)
-//        printf("GPU NumOutput: %d Channel: %d row: %d column: %d shared_mem_index: %d m[i]: %f (*weight_ptr): %f partial sum: %f\n", num_output,
-//           channel, row, column, shared_mem_index,
-//           temp, (*weight_ptr), buffer[shared_mem_index]);
+//    if (channel == 0 && row == 0 && column == 0 && product_info.bias_term)
+//    {
+//        buffer[shared_mem_index] += bias_input[num_output];
+//    }
 
     __syncthreads();
 
@@ -84,10 +77,6 @@ __global__ void gpu_innerproduct_cuda_forward(const float* a_input, const ncnn::
         if (threadIdx.x < i)
         {
             buffer[shared_mem_index] = buffer[shared_mem_index] + buffer[shared_mem_index + i];
-//            if (num_output == 2 && channel == 0 && row == 0)
-//                printf("GPU REDUCTION: num_output: %d channel %d row: %d column: %d shared_mem_index: %d i: %d buffer[shared_mem_index + i]: %f buffer[shared_mem_index]: %f\n",
-//                       num_output, channel, row, column,  shared_mem_index, i,
-//                       buffer[shared_mem_index + i], buffer[shared_mem_index]);
         }
         __syncthreads();
     }
@@ -95,29 +84,19 @@ __global__ void gpu_innerproduct_cuda_forward(const float* a_input, const ncnn::
     if (threadIdx.y == 0 && threadIdx.x == 0)
     {
         float block_sum = 0;
-//        //Add bias per output number
-//        if (channel == 0 && row == 0 && column == 0 && product_info.bias_term) {
-//            block_sum = bias_input[num_output];
-//        }
+        //Add bias per output number
+        if (channel == 0 && row == 0 && column == 0 && product_info.bias_term) {
+            block_sum = bias_input[num_output];
+        }
         const int height = a_info.h < blockHeight ? a_info.h : blockHeight;
         for (int i = 0; i < height; ++i)
         {
             block_sum += buffer[i * blockWidth];
-//            if (num_output == 2)
-//                printf("GPU ROW SUM: num_output: %d channel: %d row: %d row_sum: %f \n", num_output, channel, i, buffer[i * blockWidth]);
         }
 
         const int blocks_per_output = gridDim.x * gridDim.y * a_info.c;
         const int block_index = blocks_per_output * num_output + channel * gridDim.x * gridDim.y + blockIdx.y * gridDim.x + blockIdx.x;
         scratchpad_memory[block_index] = block_sum;
-//        if (num_output == 2)
-//        {
-//            printf("GPU RESULT: blocks_per_output: %d num_output: %d channel: %d row: %d column: %d block_index: %d block_sum: %f scratchpad_memory[block_index]: %f\n",
-//                   blocks_per_output, num_output, channel, row, column, block_index,
-//                   block_sum, scratchpad_memory[block_index]);
-//            printf("GPU RESULT: blocks_per_output: %d blockIdx.z: %d gridDim.x: %d gridDim.y: %d blockIdx.y: %d  blockIdx.x: %d\n",
-//                   blocks_per_output, blockIdx.z, gridDim.x,  gridDim.y, blockIdx.y,  blockIdx.x);
-//        }
     }
 
 
@@ -138,10 +117,6 @@ __global__ void gpu_innerproduct_cuda_forward_sum(float* output, const ncnn::Cud
     float sum = 0;
     for (int i=column*blocks_per_output; i<column*(blocks_per_output)+blocks_per_output; i++) {
         sum = sum + scratchpad_memory[i];
-//        if (num_output == 2)
-//            printf("PARTIAL SUM: blocks_per_output: %d num_output: %d i: %d start_index: %d end_index: %d ELEMENT: %f sum:%f\n",
-//                   blocks_per_output, num_output, i, column*blocks_per_output,
-//               column*(blocks_per_output)+blocks_per_output, scratchpad_memory[i], sum);
     }
 
 
@@ -174,8 +149,6 @@ __global__ void gpu_innerproduct_cuda_forward_sum(float* output, const ncnn::Cud
     }
 
     output[num_output] = sum;
-
-//    printf("RESULT: num_output: %d output[num_output]:%f\n", num_output, output[num_output]);
 }
 
 
@@ -217,9 +190,6 @@ int innerproduct_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, con
                                                                                      gpu_scratchpad_memory);
 
 
-    cudaDeviceSynchronize();
-    checkCudaErrors(cudaGetLastError());
-
     const int blocks_per_output = grid_size.x * grid_size.y * bottom_blob_info.c;
     const dim3 block_size_sum(thread_per_block_x, 1, 1);
     const dim3 grid_size_sum((info.num_output - 1) / thread_per_block_x + 1,
@@ -232,10 +202,6 @@ int innerproduct_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, con
                                                                            info,
                                                                            blocks_per_output,
                                                                            gpu_scratchpad_memory);
-
-    cudaDeviceSynchronize();
-    checkCudaErrors(cudaGetLastError());
-
 
 
     return 0;
