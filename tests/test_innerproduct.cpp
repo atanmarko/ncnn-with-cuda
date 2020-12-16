@@ -151,6 +151,14 @@ static int test_innerproduct_4()
         ;
 }
 
+static int test_innerproduct_5()
+{
+    return 0
+           || test_innerproduct_int8(RandomMat(1280, 720, 3), 3, 1)
+           || test_innerproduct_int8(RandomMat(1920, 1080, 3), 3, 1)
+    ;
+}
+
 int main()
 {
     SRAND(7767517);
@@ -161,5 +169,6 @@ int main()
            || test_innerproduct_2()
            || test_innerproduct_3()
            || test_innerproduct_4()
+           || test_innerproduct_5()
         ;
 }

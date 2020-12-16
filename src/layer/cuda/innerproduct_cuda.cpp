@@ -79,9 +79,10 @@ int InnerProduct_cuda::load_model(const CudaModelBinFromMatArray& mb)
 
 int InnerProduct_cuda::create_pipeline(const Option& opt)
 {
+    const int weight_elemsize = weight_data.elemsize;
     InnerProduct::create_pipeline(opt);
 
-    if (opt.use_int8_inference && weight_data.elemsize == (size_t)4u && int8_scale_term)
+    if (opt.use_int8_inference && weight_elemsize == (size_t)4u && int8_scale_term)
     {
         std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
         gpu_weight_data = CudaMat{weight_data, cuda_allocator};
@@ -92,7 +93,7 @@ int InnerProduct_cuda::create_pipeline(const Option& opt)
 
 int InnerProduct_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
 {
-    if (opt.use_int8_inference && weight_data.elemsize == (size_t)1u)
+    if (opt.use_int8_inference && gpu_weight_data.elemsize == (size_t)1u)
     {
         return forward_int8(bottom_blob, top_blob, opt);
     }
@@ -106,12 +107,25 @@ int InnerProduct_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, co
     return innerproduct_cuda_forward(bottom_blob, top_blob, InnerProduct_info(*this), gpu_scratch_pad_memory, gpu_scratch_pad_memory_size);
 }
 
-int InnerProduct_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const Option&) const
+int InnerProduct_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
 {
-    //todo
-    //return innerproduct_cuda_forward_int8(bottom_blob, top_blob, InnerProduct_info(*this));
+    CudaMat bottom_blob_tm = bottom_blob;
+    if (bottom_blob.elemsize != 1)
+    {
+        Option opt_g = opt;
+        opt_g.blob_allocator = opt.workspace_allocator;
 
-    return -1;
+        quantize_float32_to_int8(bottom_blob, bottom_blob_tm, bottom_blob_int8_scale, opt_g);
+    }
+
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+
+    top_blob.create(num_output, 4u, cuda_allocator);
+    if (top_blob.empty())
+        return -100;
+
+    return innerproduct_cuda_forward_int8(bottom_blob_tm, top_blob, InnerProduct_info(*this),
+                                          gpu_scratch_pad_memory, gpu_scratch_pad_memory_size);
 }
 
 

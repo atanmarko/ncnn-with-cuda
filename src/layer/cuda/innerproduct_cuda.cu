@@ -13,6 +13,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
+// Parts of this file are originally copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
 
 
 
@@ -29,11 +30,9 @@
 #include "innerproduct_cuda.h"
 
 
-
 __global__ void gpu_innerproduct_cuda_forward(const float* a_input, const ncnn::CudaMatInfo a_info,
                                               const float* weight_input, const ncnn::CudaMatInfo weight_info,
                                               const float* bias_input,
-                                              float* output, const ncnn::CudaMatInfo output_info,
                                               const ncnn::InnerProduct_cuda::InnerProduct_info product_info,
                                               float* scratchpad_memory) {
 
@@ -61,7 +60,6 @@ __global__ void gpu_innerproduct_cuda_forward(const float* a_input, const ncnn::
     buffer[shared_mem_index] = a_input[index];
 
     const float* weight_ptr = weight_input + num_output * a_info.w * a_info.h * a_info.c + a_info.w * a_info.h * channel + row * a_info.w + column;
-    float temp = buffer[shared_mem_index];
     buffer[shared_mem_index] = buffer[shared_mem_index] * (*weight_ptr);
 
     __syncthreads();
@@ -93,28 +91,86 @@ __global__ void gpu_innerproduct_cuda_forward(const float* a_input, const ncnn::
         const int block_index = blocks_per_output * num_output + channel * gridDim.x * gridDim.y + blockIdx.y * gridDim.x + blockIdx.x;
         scratchpad_memory[block_index] = block_sum;
     }
-
-
 }
 
+__global__ void gpu_innerproduct_cuda_forward_int8(const signed char* a_input, const ncnn::CudaMatInfo a_info,
+                                              const signed char* weight_input, const ncnn::CudaMatInfo weight_info,
+                                              const signed char* bias_input,
+                                              const ncnn::InnerProduct_cuda::InnerProduct_info product_info,
+                                              int* scratchpad_memory) {
+
+    const int column = blockIdx.x * blockDim.x + threadIdx.x;
+    const int row = blockIdx.y * blockDim.y + threadIdx.y;
+    const int total_channel = (blockIdx.z * blockDim.z + threadIdx.z);
+
+    extern __shared__ signed char buffer8[];
+    const int num_output = total_channel / a_info.c;
+    const int channel = total_channel % a_info.c;
+
+    const int shared_col = threadIdx.x;
+    const int shared_row = threadIdx.y;
+    const int blockWidth = blockDim.x;
+    const int blockHeight = blockDim.y;
+    const int shared_mem_index = shared_row * blockWidth + shared_col;
+    buffer8[shared_mem_index] = 0;
+
+    if (column >= a_info.w || row >= a_info.h || channel >= a_info.c || num_output >= product_info.num_output)
+    {
+        return;
+    }
+
+    const int index = channel * a_info.cstep + row * a_info.w + column;
+    buffer8[shared_mem_index] = a_input[index];
+
+    const signed char* weight_ptr = weight_input + num_output * a_info.w * a_info.h * a_info.c + a_info.w * a_info.h * channel + row * a_info.w + column;
+    buffer8[shared_mem_index] = buffer8[shared_mem_index] * (*weight_ptr);
+
+
+    __syncthreads();
+
+    const int reduction_width = blockWidth;
+    for (int i = (reduction_width + 1) / 2; i > 0; i /= 2)
+    {
+        if (threadIdx.x < i)
+        {
+            buffer8[shared_mem_index] = buffer8[shared_mem_index] + buffer8[shared_mem_index + i];
+        }
+        __syncthreads();
+    }
+
+    if (threadIdx.y == 0 && threadIdx.x == 0)
+    {
+        int block_sum = 0;
+
+        const int height = a_info.h < blockHeight ? a_info.h : blockHeight;
+        for (int i = 0; i < height; ++i)
+        {
+            block_sum += buffer8[i * blockWidth];
+        }
+
+        const int blocks_per_output = gridDim.x * gridDim.y * a_info.c;
+        const int block_index = blocks_per_output * num_output + channel * gridDim.x * gridDim.y + blockIdx.y * gridDim.x + blockIdx.x;
+//        printf("GPU BLOCK SUM IS: %d\n", block_sum);
+        scratchpad_memory[block_index] = block_sum;
+    }
+}
 
 __global__ void gpu_innerproduct_cuda_forward_sum(float* output, const ncnn::CudaMatInfo output_info,
                                                   const float* activation_params,
                                                   const ncnn::InnerProduct_cuda::InnerProduct_info product_info,
                                                   const int blocks_per_output,
-                                                  float* scratchpad_memory) {
-
+                                                  float* scratchpad_memory)
+{
     const int column = blockIdx.x * blockDim.x + threadIdx.x;
     const int num_output = column;
 
     if (column >= product_info.num_output) return;
 
     float sum = 0;
-    for (int i=column*blocks_per_output; i<column*(blocks_per_output)+blocks_per_output; i++) {
+    for (int i = column * blocks_per_output; i < column * (blocks_per_output) + blocks_per_output; i++)
+    {
         sum = sum + scratchpad_memory[i];
     }
-
-
 
     if (product_info.activation_type == 1)
     {
@@ -146,7 +202,47 @@ __global__ void gpu_innerproduct_cuda_forward_sum(float* output, const ncnn::Cud
     output[num_output] = sum;
 }
 
+__global__ void gpu_innerproduct_cuda_forward_int8_sum(float* output, const ncnn::CudaMatInfo output_info,
+                                                       const float* activation_params,
+                                                       const float* weight_data_int8_scales,
+                                                       const float* bias_data,
+                                                       const float* bottom_blob_int8_scale,
+                                                       const ncnn::InnerProduct_cuda::InnerProduct_info product_info,
+                                                       const int blocks_per_output,
+                                                       int* scratchpad_memory)
+{
+    const int column = blockIdx.x * blockDim.x + threadIdx.x;
+    const int num_output = column;
 
+    if (column >= product_info.num_output) return;
+
+    int sum = 0;
+    for (int i = column * blocks_per_output; i < column * (blocks_per_output) + blocks_per_output; i++)
+    {
+        sum = sum + scratchpad_memory[i];
+    }
+
+    // dequantize and relu
+    float scale_in;
+    if (weight_data_int8_scales[num_output] == 0)
+        scale_in = 0;
+    else
+        scale_in = 1.f / (*bottom_blob_int8_scale * weight_data_int8_scales[num_output]);
+
+//    printf("GPU SUM is: %d scale_in:%f\n", sum, scale_in);
+
+    float sumfp32 = sum * scale_in;
+
+    if (product_info.bias_term)
+        sumfp32 += bias_data[num_output];
+
+    if (product_info.activation_type == 1)
+    {
+        sumfp32 = max(sumfp32, 0.f);
+    }
+
+    output[num_output] = sumfp32;
+}
 
 namespace ncnn {
 
@@ -156,8 +252,8 @@ int innerproduct_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, con
 
     checkCudaErrors(cudaMemset(gpu_scratchpad_memory, 0, gpu_scratchpad_memory_size));
 
-    int thread_per_block_x = ((bottom_blob.w - 1) / 64 + 1) * 64;
-    if (thread_per_block_x > 128) thread_per_block_x = 128;
+    int thread_per_block_x = ((bottom_blob.w - 1) / 32 + 1) * 32;
+    if (thread_per_block_x > 64) thread_per_block_x = 64;
     int thread_per_block_y = ((bottom_blob.h - 1) / 8 + 1) * 8;
     if (thread_per_block_y > 8) thread_per_block_y = 8;
     const int thread_per_block_z = 1;
@@ -174,22 +270,18 @@ int innerproduct_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, con
     const ncnn::CudaMatInfo top_blob_info{top_blob};
     const ncnn::CudaMatInfo weight_info{*info.gpu_weight_data};
 
-    gpu_innerproduct_cuda_forward<<<grid_size, block_size, 1000 * sizeof(float)>>>(static_cast<const float*>(bottom_blob.get_craw_data()),
-                                                                                     bottom_blob_info,
-                                                                                     static_cast<const float*>(info.gpu_weight_data->get_craw_data()),
-                                                                                     weight_info,
-                                                                                     static_cast<const float*>(info.gpu_bias_data->get_craw_data()),
-                                                                                     static_cast<float*>(top_blob.get_raw_data()),
-                                                                                     top_blob_info,
-                                                                                     info,
-                                                                                     gpu_scratchpad_memory);
+    gpu_innerproduct_cuda_forward<<<grid_size, block_size, block_size.x*block_size.y * sizeof(float)>>>
+        (static_cast<const float*>(bottom_blob.get_craw_data()),
+         bottom_blob_info,
+         static_cast<const float*>(info.gpu_weight_data->get_craw_data()),
+         weight_info,
+         static_cast<const float*>(info.gpu_bias_data->get_craw_data()),
+         info, gpu_scratchpad_memory);
 
 
     const int blocks_per_output = grid_size.x * grid_size.y * bottom_blob_info.c;
     const dim3 block_size_sum(thread_per_block_x, 1, 1);
-    const dim3 grid_size_sum((info.num_output - 1) / thread_per_block_x + 1,
-                         1,
-                         1);
+    const dim3 grid_size_sum((info.num_output - 1) / thread_per_block_x + 1,1,1);
 
     gpu_innerproduct_cuda_forward_sum<<<grid_size_sum, block_size_sum>>>(static_cast<float*>(top_blob.get_raw_data()),
                                                                            top_blob_info,
@@ -205,6 +297,49 @@ int innerproduct_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, con
 int innerproduct_cuda_forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const InnerProduct_cuda::InnerProduct_info& info,
                                    float* gpu_scratchpad_memory, int gpu_scratchpad_memory_size)
 {
+    checkCudaErrors(cudaMemset(gpu_scratchpad_memory, 0, gpu_scratchpad_memory_size));
+
+    int thread_per_block_x = ((bottom_blob.w - 1) / 32 + 1) * 32;
+    if (thread_per_block_x > 64) thread_per_block_x = 64;
+    int thread_per_block_y = ((bottom_blob.h - 1) / 8 + 1) * 8;
+    if (thread_per_block_y > 8) thread_per_block_y = 8;
+    const int thread_per_block_z = 1;
+    const int total_number_of_channels = bottom_blob.c * info.num_output;
+    const int total_number_of_columns = bottom_blob.w;
+    const int total_number_of_rows = bottom_blob.h;
+
+    const dim3 block_size(thread_per_block_x, thread_per_block_y, thread_per_block_z);
+    const dim3 grid_size((total_number_of_columns - 1) / thread_per_block_x + 1,
+                         (total_number_of_rows - 1) / thread_per_block_y + 1,
+                         (total_number_of_channels - 1) / thread_per_block_z + 1);
+
+    const ncnn::CudaMatInfo bottom_blob_info{bottom_blob};
+    const ncnn::CudaMatInfo top_blob_info{top_blob};
+    const ncnn::CudaMatInfo weight_info{*info.gpu_weight_data};
+
+    gpu_innerproduct_cuda_forward_int8<<<grid_size, block_size, block_size.x*block_size.y * sizeof(signed char)>>>
+        (static_cast<const signed char*>(bottom_blob.get_craw_data()),
+         bottom_blob_info,
+         static_cast<const signed char*>(info.gpu_weight_data->get_craw_data()),
+         weight_info,
+         static_cast<const signed char*>(info.gpu_bias_data->get_craw_data()),
+         info,
+         reinterpret_cast<int *>(gpu_scratchpad_memory));
+
+    const int blocks_per_output = grid_size.x * grid_size.y * bottom_blob_info.c;
+    const dim3 block_size_sum(thread_per_block_x, 1, 1);
+    const dim3 grid_size_sum((info.num_output - 1) / thread_per_block_x + 1,1,1);
+
+    gpu_innerproduct_cuda_forward_int8_sum<<<grid_size_sum, block_size_sum>>>(static_cast<float*>(top_blob.get_raw_data()),
+                                                                                top_blob_info,
+                                                                                static_cast<const float*>(info.gpu_activation_params->get_craw_data()),
+                                                                                static_cast<const float*>(info.gpu_weight_data_int8_scales->get_craw_data()),
+                                                                                static_cast<const float*>(info.gpu_bias_data->get_craw_data()),
+                                                                                static_cast<const float*>(info.gpu_bottom_blob_int8_scale),
+                                                                                info,
+                                                                                blocks_per_output,
+                                                                                reinterpret_cast<int *>(gpu_scratchpad_memory));
+
     return 0;
 }
 

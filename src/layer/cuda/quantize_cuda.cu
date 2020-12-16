@@ -52,6 +52,7 @@ __global__ void gpu_quantize_forward(const float* a_input, const ncnn::CudaMatIn
     const int input_index = channel * a_info.cstep + row * a_info.w + column;
     const int output_index = channel * output_info.cstep + row * output_info.w + column;
     output[output_index] = gpu_float2int8(a_input[input_index] * scale);
+
 }
 
 

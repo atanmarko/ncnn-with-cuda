@@ -276,6 +276,8 @@ public:
     static Mat from_float16(const unsigned short* data, int size);
 
     static void print_mat(const Mat& mat);
+    static void print_mat_int(const Mat& mat);
+    static void print_mat_char(const Mat& mat);
 
     // pointer to the data
     void* data;
@@ -933,6 +935,7 @@ void copy_make_border(const CudaMat& src, CudaMat& dst, int top, int bottom, int
 void convert_packing(const CudaMat& src, CudaMat& dst, int _elempack, const Option& opt = Option());
 void cast_float32_to_float16(const CudaMat& src, CudaMat& dst, const Option& opt = Option());
 void cast_float16_to_float32(const CudaMat& src, CudaMat& dst, const Option& opt = Option());
+void quantize_float32_to_int8(const CudaMat& src, CudaMat& dst, float scale, const Option& opt = Option());
 #endif
 
 inline Mat::Mat()

@@ -204,6 +204,48 @@ void Mat::print_mat(const Mat& mat)
     }
 }
 
+void Mat::print_mat_int(const Mat& mat)
+{
+    for (int i=0; i< mat.c; i++)
+    {
+        Mat tmp = mat.channel(i);
+
+        std::cout << "[";
+        for (int j=0;j<mat.h;j++)
+        {
+            int* row = tmp.row<int>(j);
+            std::cout << "[";
+            for (int k=0; k<tmp.w; k++ )
+            {
+                std::cout << row[k] << " ";
+            }
+            std::cout << "]";
+        }
+        std::cout << "]" << std::endl;
+    }
+}
+
+void Mat::print_mat_char(const Mat& mat)
+{
+    for (int i=0; i< mat.c; i++)
+    {
+        Mat tmp = mat.channel(i);
+
+        std::cout << "[";
+        for (int j=0;j<mat.h;j++)
+        {
+            signed char* row = tmp.row<signed char>(j);
+            std::cout << "[";
+            for (int k=0; k<tmp.w; k++ )
+            {
+                std::cout << static_cast<int>(row[k]) << " ";
+            }
+            std::cout << "]";
+        }
+        std::cout << "]" << std::endl;
+    }
+}
+
 #if NCNN_VULKAN
 #if __ANDROID_API__ >= 26
 VkImageMat VkImageMat::from_android_hardware_buffer(VkAndroidHardwareBufferImageAllocator* allocator)
@@ -538,6 +580,24 @@ void cast_float16_to_float32(const CudaMat& src, CudaMat& dst, const Option& opt
     cast->destroy_pipeline(opt);
 
     delete cast;
+}
+
+void quantize_float32_to_int8(const CudaMat& src, CudaMat& dst, float scale, const Option& opt)
+{
+    Layer* quantize = create_layer(LayerType::Quantize);
+
+    ParamDict pd;
+    pd.set(0, scale);
+
+    quantize->load_param(pd);
+
+    quantize->create_pipeline(opt);
+
+    quantize->forward(src, dst, opt);
+
+    quantize->destroy_pipeline(opt);
+
+    delete quantize;
 }
 
 #endif
