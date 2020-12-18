@@ -23,12 +23,22 @@
 
 namespace ncnn {
 
-int flatten_cuda_forward(const unsigned char* bottom_blob, const ncnn::CudaMatInfo bottom_blob_info,
-                         unsigned char* top_blob);
+int convolution_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Convolution_cuda::Convolution_info& info);
+int convolution_cuda_forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const Convolution_cuda::Convolution_info& info);
 
 Convolution_cuda::Convolution_cuda()
 {
     support_cuda = true;
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+    gpu_bottom_blob_int8_scale = static_cast<float *>(cuda_allocator->fastMalloc(sizeof(float)));
+    gpu_top_blob_int8_scale = static_cast<float *>(cuda_allocator->fastMalloc(sizeof(float)));
+}
+
+Convolution_cuda::~Convolution_cuda()
+{
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+    cuda_allocator->fastFree(gpu_bottom_blob_int8_scale);
+    cuda_allocator->fastFree(gpu_top_blob_int8_scale);
 }
 
 int Convolution_cuda::load_param(const ParamDict& pd)
@@ -41,9 +51,9 @@ int Convolution_cuda::load_param(const ParamDict& pd)
     return 0;
 }
 
-int Convolution_cuda::load_model(const ModelBin& mb)
+int Convolution_cuda::load_model(const CudaModelBinFromMatArray& mb)
 {
-    int result = Convolution::load_model(mb);
+    int result = Convolution::load_model(static_cast<ModelBinFromMatArray>(mb));
     if (result < 0)
         return result;
 
@@ -60,6 +70,7 @@ int Convolution_cuda::load_model(const ModelBin& mb)
     {
         gpu_weight_data_int8_scales = CudaMat{weight_data_int8_scales, cuda_allocator};
         checkCudaErrors(cudaMemcpy(gpu_bottom_blob_int8_scale, &bottom_blob_int8_scale, sizeof(float), cudaMemcpyHostToDevice));
+        checkCudaErrors(cudaMemcpy(gpu_top_blob_int8_scale, &top_blob_int8_scale, sizeof(float), cudaMemcpyHostToDevice));
     }
 
     return 0;
@@ -111,9 +122,10 @@ void Convolution_cuda::make_padding(const CudaMat& bottom_blob, CudaMat& bottom_
 
 int Convolution_cuda::create_pipeline(const Option& opt)
 {
+    const int elemsize =  weight_data.elemsize;
     Convolution::create_pipeline(opt);
 
-    if (opt.use_int8_inference && weight_data.elemsize == (size_t)4u && int8_scale_term)
+    if (opt.use_int8_inference && elemsize == (size_t)4u && int8_scale_term)
     {
         std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
         gpu_weight_data = CudaMat{weight_data, cuda_allocator};
@@ -126,8 +138,7 @@ int Convolution_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, con
 {
     if (opt.use_int8_inference && weight_data.elemsize == (size_t)1u)
     {
-        throw std::runtime_error("Not supported");
-        return -1;
+        return forward_int8(bottom_blob, top_blob, opt);
     }
 
     // flattened blob, implement as InnerProduct
@@ -158,10 +169,10 @@ int Convolution_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, con
             if (int8_scale_term)
             {
                 weights[2] = weight_data_int8_scales;
-                weights[3] = CudaMat(1, (size_t)4u, (void*)& bottom_blob_int8_scale);
+                weights[3] = Mat(1, (size_t)4u, (void*)& bottom_blob_int8_scale);
             }
 
-            op->load_model(ModelBinFromMatArray(weights));
+            op->load_model(CudaModelBinFromMatArray(weights));
 
             op->create_pipeline(opt);
 
@@ -177,9 +188,114 @@ int Convolution_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, con
     }
 
 
+    const int kernel_extent_w = dilation_w * (kernel_w - 1) + 1;
+    const int kernel_extent_h = dilation_h * (kernel_h - 1) + 1;
 
+    CudaMat bottom_blob_bordered;
+    make_padding(bottom_blob, bottom_blob_bordered, opt);
+    if (bottom_blob_bordered.empty())
+        return -100;
 
-    return 0;
+    int w = bottom_blob_bordered.w;
+    int h = bottom_blob_bordered.h;
+    int outw = (w - kernel_extent_w) / stride_w + 1;
+    int outh = (h - kernel_extent_h) / stride_h + 1;
+    const int maxk = kernel_w * kernel_h;
+
+    // kernel offsets
+    std::vector<int> _space_ofs(maxk);
+    int* space_ofs = &_space_ofs[0];
+    {
+        int p1 = 0;
+        int p2 = 0;
+        int gap = w * dilation_h - kernel_w * dilation_w;
+        for (int i = 0; i < kernel_h; i++)
+        {
+            for (int j = 0; j < kernel_w; j++)
+            {
+                space_ofs[p1] = p2;
+                p1++;
+                p2 += dilation_w;
+            }
+            p2 += gap;
+        }
+    }
+
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+
+    // float32
+    top_blob.create(outw, outh, num_output, bottom_blob.elemsize, cuda_allocator);
+    if (top_blob.empty())
+        return -100;
+
+    return convolution_cuda_forward(bottom_blob_bordered, top_blob, Convolution_info(*this, _space_ofs));
 }
+
+
+int Convolution_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
+{
+    int w = bottom_blob.w;
+    int h = bottom_blob.h;
+    size_t elemsize = bottom_blob.elemsize;
+
+    const int kernel_extent_w = dilation_w * (kernel_w - 1) + 1;
+    const int kernel_extent_h = dilation_h * (kernel_h - 1) + 1;
+
+    CudaMat bottom_blob_unbordered = bottom_blob;
+    if (elemsize != 1)
+    {
+        Option opt_g = opt;
+        opt_g.blob_allocator = opt.workspace_allocator;
+
+        quantize_float32_to_int8(bottom_blob, bottom_blob_unbordered, bottom_blob_int8_scale, opt_g);
+    }
+
+    CudaMat bottom_blob_bordered;
+    make_padding(bottom_blob_unbordered, bottom_blob_bordered, opt);
+    if (bottom_blob_bordered.empty())
+        return -100;
+
+    w = bottom_blob_bordered.w;
+    h = bottom_blob_bordered.h;
+
+    int outw = (w - kernel_extent_w) / stride_w + 1;
+    int outh = (h - kernel_extent_h) / stride_h + 1;
+
+    const int maxk = kernel_w * kernel_h;
+
+    // kernel offsets
+    std::vector<int> _space_ofs(maxk);
+    int* space_ofs = &_space_ofs[0];
+    {
+        int p1 = 0;
+        int p2 = 0;
+        int gap = w * dilation_h - kernel_w * dilation_w;
+        for (int i = 0; i < kernel_h; i++)
+        {
+            for (int j = 0; j < kernel_w; j++)
+            {
+                space_ofs[p1] = p2;
+                p1++;
+                p2 += dilation_w;
+            }
+            p2 += gap;
+        }
+    }
+
+    // int8
+    size_t out_elemsize = use_int8_requantize ? 1u : 4u;
+
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+
+    top_blob.create(outw, outh, num_output, out_elemsize, cuda_allocator);
+    if (top_blob.empty())
+        return -100;
+
+
+    return convolution_cuda_forward_int8(bottom_blob_bordered, top_blob, Convolution_info(*this, _space_ofs));
+}
+
+
+
 
 } // namespace ncnn

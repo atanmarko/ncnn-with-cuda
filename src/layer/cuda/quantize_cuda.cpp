@@ -31,7 +31,7 @@ Quantize_cuda::Quantize_cuda()
 }
 
 
-int Quantize_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
+int Quantize_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option&) const
 {
 
     return quantize_cuda_forward(bottom_blob, top_blob, scale);
