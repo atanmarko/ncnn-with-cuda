@@ -2644,6 +2644,22 @@ inline CudaMat::CudaMat(int _w, int _h, int _c, void* _data, size_t _elemsize, s
     cstep = alignSize(w * h * elemsize, 16) / elemsize;
 }
 
+inline CudaMat::CudaMat(int _w, int _h, int _c, void* _data, size_t _elemsize, int _elempack, std::shared_ptr<CudaAllocator> _allocator)
+    : data(_data), refcount(0), elemsize(_elemsize), elempack(_elempack), allocator(_allocator), dims(3), w(_w), h(_h), c(_c)
+{
+    cstep = alignSize((size_t)w * h * elemsize, 16) / elemsize;
+}
+
+inline CudaMat CudaMat::channel_range(int _c, int channels)
+{
+    return CudaMat(w, h, channels, (unsigned char*)data + cstep * _c * elemsize, elemsize, elempack, allocator);
+}
+
+inline const CudaMat CudaMat::channel_range(int _c, int channels) const
+{
+    return CudaMat(w, h, channels, (unsigned char*)data + cstep * _c * elemsize, elemsize, elempack, allocator);
+}
+
 inline void CudaMat::release()
 {
     if (refcount && NCNN_XADD(refcount.get(), -1) == 1)

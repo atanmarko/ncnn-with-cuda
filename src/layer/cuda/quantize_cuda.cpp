@@ -23,7 +23,7 @@
 
 namespace ncnn {
 
-int quantize_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, float scale);
+int quantize_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, float scale, std::shared_ptr<ncnn::CudaAllocator> blob_cuda_allocator);
 
 Quantize_cuda::Quantize_cuda()
 {
@@ -31,10 +31,10 @@ Quantize_cuda::Quantize_cuda()
 }
 
 
-int Quantize_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option&) const
+int Quantize_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
 {
 
-    return quantize_cuda_forward(bottom_blob, top_blob, scale);
+    return quantize_cuda_forward(bottom_blob, top_blob, scale, opt.blob_cuda_allocator);
 }
 
 
