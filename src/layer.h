@@ -97,7 +97,7 @@ public:
     bool support_weight_fp16_storage;
 
     // support cuda compute
-    bool support_cuda;
+    bool support_cuda{false};
 
 public:
     // implement inference

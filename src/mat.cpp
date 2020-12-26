@@ -600,6 +600,44 @@ void quantize_float32_to_int8(const CudaMat& src, CudaMat& dst, float scale, con
     delete quantize;
 }
 
+void cast_float32_to_bfloat16(const CudaMat& src, CudaMat& dst, const Option& opt)
+{
+    Layer* cast = create_layer(LayerType::Cast);
+
+    ParamDict pd;
+    pd.set(0, 1);
+    pd.set(1, 4);
+
+    cast->load_param(pd);
+
+    cast->create_pipeline(opt);
+
+    cast->forward(src, dst, opt);
+
+    cast->destroy_pipeline(opt);
+
+    delete cast;
+}
+
+void cast_bfloat16_to_float32(const CudaMat& src, CudaMat& dst, const Option& opt)
+{
+    Layer* cast = create_layer(LayerType::Cast);
+
+    ParamDict pd;
+    pd.set(0, 4);
+    pd.set(1, 1);
+
+    cast->load_param(pd);
+
+    cast->create_pipeline(opt);
+
+    cast->forward(src, dst, opt);
+
+    cast->destroy_pipeline(opt);
+
+    delete cast;
+}
+
 #endif
 
 

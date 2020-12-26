@@ -77,6 +77,30 @@ int InnerProduct_cuda::load_model(const CudaModelBinFromMatArray& mb)
     return 0;
 }
 
+int InnerProduct_cuda::load_model(const ModelBin& mb)
+{
+    int result = InnerProduct::load_model(mb);
+    if (result < 0)
+        return result;
+
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+
+    gpu_weight_data = CudaMat{weight_data, cuda_allocator};
+
+    if (bias_term)
+    {
+        gpu_bias_data = CudaMat{bias_data, cuda_allocator};
+    }
+
+    if (int8_scale_term)
+    {
+        gpu_weight_data_int8_scales = CudaMat{weight_data_int8_scales, cuda_allocator};
+        checkCudaErrors(cudaMemcpy(gpu_bottom_blob_int8_scale, &bottom_blob_int8_scale, sizeof(float), cudaMemcpyHostToDevice));
+    }
+
+    return 0;
+}
+
 int InnerProduct_cuda::create_pipeline(const Option& opt)
 {
     const int weight_elemsize = weight_data.elemsize;

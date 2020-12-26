@@ -64,6 +64,14 @@ protected:
 };
 
 #if NCNN_CUDA
+class CudaModelBinFromDataReader : public ModelBinFromDataReader
+{
+public:
+    CudaModelBinFromDataReader(const DataReader& dr);
+
+    using ModelBinFromDataReader::load;
+};
+
 class CudaModelBinFromMatArray : public ModelBinFromMatArray
 {
     // Class used to point model initialization

@@ -28,7 +28,7 @@ class Convolution_cuda : virtual public Convolution
 public:
     struct Convolution_info
     {
-        Convolution_info(const Convolution_cuda& info, std::vector<int>& _space_ofs)
+        Convolution_info(const Convolution_cuda& info, const int* _gpu_space_ofs)
             : num_output(info.num_output),
               kernel_w(info.kernel_w),
               kernel_h(info.kernel_h),
@@ -51,21 +51,14 @@ public:
               gpu_bias_data(&info.gpu_bias_data),
               gpu_weight_data_int8_scales(&info.gpu_weight_data_int8_scales),
               gpu_bottom_blob_int8_scale(info.gpu_bottom_blob_int8_scale),
-              gpu_top_blob_int8_scale(info.gpu_top_blob_int8_scale)
-
+              gpu_top_blob_int8_scale(info.gpu_top_blob_int8_scale),
+              gpu_space_ofs{_gpu_space_ofs}
         {
             kernel_extent_w = dilation_w * (kernel_w - 1) + 1;
             kernel_extent_h = dilation_h * (kernel_h - 1) + 1;
             maxk = kernel_w * kernel_h;
-
-            std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-            auto deleter = [](int* pointer) {
-              std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-              cuda_allocator->fastFree(pointer);
-            };
-            gpu_space_ofs = std::shared_ptr<int>(static_cast<int*>(cuda_allocator->fastMalloc(_space_ofs.size() * sizeof(int))), deleter);
-            checkCudaErrors(cudaMemcpy(gpu_space_ofs.get(), _space_ofs.data(), _space_ofs.size() * sizeof(int), cudaMemcpyHostToDevice));
         }
+
 
         Convolution_info& operator=(const Convolution_info&) = delete;
 
@@ -94,7 +87,7 @@ public:
         const float* const gpu_bottom_blob_int8_scale;
         const float* const gpu_top_blob_int8_scale;
 
-        std::shared_ptr<int> gpu_space_ofs;
+        const int* gpu_space_ofs;
 
         int kernel_extent_w;
         int kernel_extent_h;
@@ -109,6 +102,7 @@ public:
 
     using Convolution::load_model;
     virtual int load_model(const CudaModelBinFromMatArray& mb);
+    virtual int load_model(const ModelBin& mb);
 
     virtual int create_pipeline(const Option& opt);
 

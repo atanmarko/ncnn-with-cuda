@@ -87,6 +87,43 @@ int Padding_cuda::load_model(const CudaModelBinFromMatArray& pd)
     return 0;
 }
 
+int Padding_cuda::load_model(const ModelBin& pd)
+{
+    Padding::load_model(pd);
+
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+    gpu_per_channel_pad_data = CudaMat{per_channel_pad_data, cuda_allocator};
+
+    const int number_of_elements = per_channel_pad_data.w;
+
+    std::unique_ptr<char[]> padding_char = std::make_unique<char[]>(number_of_elements);
+    std::unique_ptr<unsigned short[]> padding_unsigned_short = std::make_unique<unsigned short[]>(number_of_elements);
+    std::unique_ptr<unsigned short[]> padding_unsigned_short_use_fp16 = std::make_unique<unsigned short[]>(number_of_elements);
+    std::unique_ptr<float[]> padding_float = std::make_unique<float[]>(number_of_elements);
+
+
+    for (int i=0; i<number_of_elements; ++i) {
+        float pad_value = per_channel_pad_data[i];
+        padding_char[i] = static_cast<signed char>(pad_value);
+        padding_unsigned_short[i] =float32_to_bfloat16(pad_value);
+        padding_unsigned_short_use_fp16[i] = float32_to_float16(pad_value);
+        padding_float[i] = pad_value;
+    }
+
+    gpu_per_channel_pad_data_char = static_cast<char*>(cuda_allocator->fastMalloc(sizeof(signed char) * number_of_elements));
+    gpu_per_channel_pad_data_unsigned_short = static_cast<unsigned short*>(cuda_allocator->fastMalloc(sizeof(unsigned short) * number_of_elements));
+    gpu_per_channel_pad_data_unsigned_short_use_fp16 = static_cast<unsigned short*>(cuda_allocator->fastMalloc(sizeof(unsigned short) *number_of_elements));
+    gpu_per_channel_pad_data_float = static_cast<float*>(cuda_allocator->fastMalloc(sizeof(float) * number_of_elements));
+
+
+    checkCudaErrors(cudaMemcpy(gpu_per_channel_pad_data_char, padding_char.get(), sizeof(signed char) * number_of_elements, cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(gpu_per_channel_pad_data_unsigned_short, padding_unsigned_short.get(), sizeof(unsigned short) * number_of_elements, cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(gpu_per_channel_pad_data_unsigned_short_use_fp16, padding_unsigned_short_use_fp16.get(), sizeof(unsigned short) * number_of_elements, cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(gpu_per_channel_pad_data_float, padding_float.get(), sizeof(float) * number_of_elements, cudaMemcpyHostToDevice));
+
+    return 0;
+}
+
 
 int Padding_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
 {

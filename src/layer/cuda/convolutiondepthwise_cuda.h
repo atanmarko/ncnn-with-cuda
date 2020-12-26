@@ -116,6 +116,7 @@ public:
 
     using ConvolutionDepthWise::load_model;
     virtual int load_model(const CudaModelBinFromMatArray& mb);
+    virtual int load_model(const ModelBin& mb);
 
     virtual int create_pipeline(const Option& opt);
 

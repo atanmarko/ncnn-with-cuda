@@ -46,6 +46,21 @@ int Bias_cuda::load_model(const CudaModelBinFromMatArray& mb)
     return 0;
 }
 
+int Bias_cuda::load_model(const ModelBin& mb)
+{
+    if (!this->support_cuda)
+        return -100;
+
+
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+
+    bias_data = CudaMat{mb.load(bias_data_size, 1), cuda_allocator};
+    if (bias_data.empty())
+        return -100;
+
+    return 0;
+}
+
 int Bias_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt __attribute__((unused))) const
 {
 #if LOG_LAYERS

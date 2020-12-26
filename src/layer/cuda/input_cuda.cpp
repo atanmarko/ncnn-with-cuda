@@ -16,41 +16,25 @@
 // Parts of this file are originally copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
 
 
-#ifndef LAYER_BATCHNORM_CUDA_H
-#define LAYER_BATCHNORM_CUDA_H
+#include "input_cuda.h"
 
-#include "batchnorm.h"
 
 namespace ncnn {
 
-class BatchNorm_cuda : virtual public BatchNorm
+
+Input_cuda::Input_cuda()
 {
-public:
-    BatchNorm_cuda();
+    support_cuda = true;
+}
 
-    virtual int create_pipeline(const Option& /*opt*/);
-    virtual int destroy_pipeline(const Option& /*opt*/);
 
-    virtual int load_model(const CudaModelBinFromMatArray& mb);
-    virtual int load_model(const ModelBin& mb);
+int Input_cuda::forward_inplace(CudaMat& /*bottom_top_blob*/, const Option& /*opt*/) const
+{
+#if LOG_LAYERS
+    LOGL("Input_cuda forward_inplace");
+#endif
+    return 0;
+}
 
-    virtual int forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const;
-
-public:
-    // model
-    CudaMat slope_data_gpu;
-    CudaMat mean_data_gpu;
-    CudaMat var_data_gpu;
-    CudaMat bias_data_gpu;
-
-    mutable CudaMat a_data_gpu;
-    mutable CudaMat b_data_gpu;
-
-private:
-    std::shared_ptr<CudaAllocator> _allocator;
-
-};
 
 } // namespace ncnn
-
-#endif // LAYER_BATCHNORM_CUDA_H

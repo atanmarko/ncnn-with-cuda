@@ -74,6 +74,31 @@ int ConvolutionDepthWise_cuda::load_model(const CudaModelBinFromMatArray& mb)
     return 0;
 }
 
+int ConvolutionDepthWise_cuda::load_model(const ModelBin& mb)
+{
+    int result = ConvolutionDepthWise::load_model(mb);
+    if (result < 0)
+        return result;
+
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+
+    gpu_weight_data = CudaMat{weight_data, cuda_allocator};
+
+    if (bias_term)
+    {
+        gpu_bias_data = CudaMat{bias_data, cuda_allocator};
+    }
+
+    if (int8_scale_term)
+    {
+        gpu_weight_data_int8_scales = CudaMat{weight_data_int8_scales, cuda_allocator};
+        gpu_bottom_blob_int8_scales = CudaMat{bottom_blob_int8_scales, cuda_allocator};
+        checkCudaErrors(cudaMemcpy(gpu_top_blob_int8_scale, &top_blob_int8_scale, sizeof(float), cudaMemcpyHostToDevice));
+    }
+
+    return 0;
+}
+
 void ConvolutionDepthWise_cuda::make_padding(const CudaMat& bottom_blob, CudaMat& bottom_blob_bordered, const Option& opt) const
 {
     int w = bottom_blob.w;
@@ -239,9 +264,6 @@ int ConvolutionDepthWise_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat&
 
             quantize_float32_to_int8(bottom_blob_g, bottom_blob_int8_g, bottom_blob_int8_scales[g], opt_g);
         }
-
-        cudaDeviceSynchronize();
-        checkCudaErrors(cudaGetLastError());
     }
 
     CudaMat bottom_blob_bordered;

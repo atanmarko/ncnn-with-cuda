@@ -29,6 +29,7 @@ public:
 	Bias_cuda();
 
     virtual int load_model(const CudaModelBinFromMatArray& mb);
+    virtual int load_model(const  ModelBin& mb);
 
     virtual int forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const;
 

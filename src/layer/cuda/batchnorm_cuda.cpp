@@ -85,6 +85,48 @@ int BatchNorm_cuda::load_model(const CudaModelBinFromMatArray& mb)
     return 0;
 }
 
+int BatchNorm_cuda::load_model(const ModelBin& mb)
+{
+    if (!this->support_cuda)
+        return -100;
+
+
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+
+    slope_data_gpu = CudaMat{mb.load(channels, 1), cuda_allocator};
+    if (slope_data_gpu.empty())
+        return -100;
+
+    mean_data_gpu = CudaMat{mb.load(channels, 1), cuda_allocator};
+    if (mean_data_gpu.empty())
+        return -100;
+
+    var_data_gpu = CudaMat{mb.load(channels, 1), cuda_allocator};
+    if (var_data_gpu.empty())
+        return -100;
+
+    bias_data_gpu = CudaMat{mb.load(channels, 1), cuda_allocator};
+    if (bias_data_gpu.empty())
+        return -100;
+
+    a_data_gpu.create(channels, sizeof(float), cuda_allocator );
+    if (a_data_gpu.empty())
+        return -100;
+    b_data_gpu.create(channels, sizeof(float), cuda_allocator);
+    if (b_data_gpu.empty())
+        return -100;
+
+    batchnorm_cuda_load_model(channels, eps, static_cast<float*>(a_data_gpu.get_raw_data()),
+                              static_cast<float*>(b_data_gpu.get_raw_data()),
+                              static_cast<float*>(bias_data_gpu.get_raw_data()),
+                              static_cast<float*>(slope_data_gpu.get_raw_data()),
+                              static_cast<float*>(mean_data_gpu.get_raw_data()),
+                              static_cast<float*>(var_data_gpu.get_raw_data()));
+
+    return 0;
+}
+
+
 int BatchNorm_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& /*opt*/) const
 {
 #if LOG_LAYERS

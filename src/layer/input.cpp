@@ -24,6 +24,7 @@ Input::Input()
     support_packing = true;
     support_bf16_storage = true;
     support_image_storage = true;
+    support_cuda = true;
 }
 
 int Input::load_param(const ParamDict& pd)
@@ -42,6 +43,16 @@ int Input::forward_inplace(Mat& /*bottom_top_blob*/, const Option& /*opt*/) cons
 #endif
     return 0;
 }
+
+#if NCNN_CUDA
+int Input::forward_inplace(CudaMat& /*bottom_top_blob*/, const Option& /*opt*/) const
+{
+#if LOG_LAYERS
+    LOGL("Input cuda forward_inplace");
+#endif
+    return 0;
+}
+#endif
 
 #if NCNN_VULKAN
 int Input::forward_inplace(VkMat& /*bottom_top_blob*/, VkCompute& /*cmd*/, const Option& /*opt*/) const

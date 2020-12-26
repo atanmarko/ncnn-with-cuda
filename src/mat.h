@@ -936,6 +936,8 @@ void convert_packing(const CudaMat& src, CudaMat& dst, int _elempack, const Opti
 void cast_float32_to_float16(const CudaMat& src, CudaMat& dst, const Option& opt = Option());
 void cast_float16_to_float32(const CudaMat& src, CudaMat& dst, const Option& opt = Option());
 void quantize_float32_to_int8(const CudaMat& src, CudaMat& dst, float scale, const Option& opt = Option());
+void cast_float32_to_bfloat16(const CudaMat& src, CudaMat& dst, const Option& option = Option());
+void cast_bfloat16_to_float32(const CudaMat& src, CudaMat& dst, const Option& opt = Option());
 #endif
 
 inline Mat::Mat()
@@ -3024,6 +3026,11 @@ inline CudaMat CudaMat::reshape(int _w, int _h, int _c,std::shared_ptr<CudaAlloc
     m.cstep = alignSize(_w * _h * elemsize, 16) / elemsize;
 
     return m;
+}
+
+inline int CudaMat::elembits() const
+{
+    return elempack ? static_cast<int>(elemsize * 8) / elempack : 0;
 }
 
 #endif

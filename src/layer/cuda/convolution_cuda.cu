@@ -42,7 +42,7 @@ __global__ void gpu_convolution_cuda_forward(const float* a_input, const ncnn::C
                                               const float* bias_data, const float* activation_params,
                                               float* output, const ncnn::CudaMatInfo output_info,
                                               const ncnn::Convolution_cuda::Convolution_info product_info,
-                                              const int* gpu_space_offset) {
+                                              const int* const gpu_space_offset) {
 
     const int output_column = blockIdx.x * blockDim.x + threadIdx.x;
     const int output_row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -125,7 +125,7 @@ __global__ void gpu_convolution_cuda_forward_int8(const signed char* a_input, co
                                              const float* bias_data, const float* activation_params,
                                              signed char* output, const ncnn::CudaMatInfo output_info,
                                              const ncnn::Convolution_cuda::Convolution_info product_info,
-                                             const int* gpu_space_offset,
+                                             const int* const gpu_space_offset,
                                              const float *gpu_weight_data_int8_scales) {
 
     const int output_column = blockIdx.x * blockDim.x + threadIdx.x;
@@ -253,7 +253,7 @@ int convolution_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, cons
                                                                                     static_cast<float*>(top_blob.get_raw_data()),
                                                                                     top_blob_info,
                                                                                     info,
-                                                                                    info.gpu_space_ofs.get());
+                                                                                    static_cast<const int*>(info.gpu_space_ofs));
 
     return 0;
 }
@@ -288,7 +288,7 @@ int convolution_cuda_forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob,
                                                                                                        static_cast<signed char*>(top_blob.get_raw_data()),
                                                                                                        top_blob_info,
                                                                                                        info,
-                                                                                                       info.gpu_space_ofs.get(),
+                                                                                                       static_cast<const int*>(info.gpu_space_ofs),
                                                                                                        static_cast<const float*>(info.gpu_weight_data_int8_scales->get_craw_data()));
 
     return 0;

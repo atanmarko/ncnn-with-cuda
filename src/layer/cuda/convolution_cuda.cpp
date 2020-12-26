@@ -76,6 +76,31 @@ int Convolution_cuda::load_model(const CudaModelBinFromMatArray& mb)
     return 0;
 }
 
+int Convolution_cuda::load_model(const ModelBin& mb)
+{
+    int result = Convolution::load_model(mb);
+    if (result < 0)
+        return result;
+
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+
+    gpu_weight_data = CudaMat{weight_data, cuda_allocator};
+
+    if (bias_term)
+    {
+        gpu_bias_data = CudaMat{bias_data, cuda_allocator};
+    }
+
+    if (int8_scale_term)
+    {
+        gpu_weight_data_int8_scales = CudaMat{weight_data_int8_scales, cuda_allocator};
+        checkCudaErrors(cudaMemcpy(gpu_bottom_blob_int8_scale, &bottom_blob_int8_scale, sizeof(float), cudaMemcpyHostToDevice));
+        checkCudaErrors(cudaMemcpy(gpu_top_blob_int8_scale, &top_blob_int8_scale, sizeof(float), cudaMemcpyHostToDevice));
+    }
+
+    return 0;
+}
+
 void Convolution_cuda::make_padding(const CudaMat& bottom_blob, CudaMat& bottom_blob_bordered, const Option& opt) const
 {
     int w = bottom_blob.w;
@@ -231,7 +256,14 @@ int Convolution_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, con
     if (top_blob.empty())
         return -100;
 
-    return convolution_cuda_forward(bottom_blob_bordered, top_blob, Convolution_info(*this, _space_ofs));
+    int *gpu_space_ofs = static_cast<int*>(cuda_allocator->fastMalloc(_space_ofs.size() * sizeof(int)));
+    checkCudaErrors(cudaMemcpy(gpu_space_ofs, _space_ofs.data(), _space_ofs.size() * sizeof(int), cudaMemcpyHostToDevice));
+
+    int result = convolution_cuda_forward(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs));
+
+    cuda_allocator->fastFree(gpu_space_ofs);
+
+    return result;
 }
 
 
@@ -297,8 +329,12 @@ int Convolution_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob
     if (top_blob.empty())
         return -100;
 
+    int *gpu_space_ofs = static_cast<int*>(cuda_allocator->fastMalloc(_space_ofs.size() * sizeof(int)));
+    checkCudaErrors(cudaMemcpy(gpu_space_ofs, _space_ofs.data(), _space_ofs.size() * sizeof(int), cudaMemcpyHostToDevice));
+    int result = convolution_cuda_forward_int8(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs));
+    cuda_allocator->fastFree(gpu_space_ofs);
 
-    return convolution_cuda_forward_int8(bottom_blob_bordered, top_blob, Convolution_info(*this, _space_ofs));
+    return result;
 }
 
 

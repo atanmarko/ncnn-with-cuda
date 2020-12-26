@@ -55,6 +55,7 @@ public:
     using Padding::load_model;
 
     virtual int load_model(const CudaModelBinFromMatArray& pd);
+    virtual int load_model(const ModelBin& pd);
 
     using Padding::forward;
 
