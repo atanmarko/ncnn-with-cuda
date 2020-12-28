@@ -1,3 +1,5 @@
+For license of the upstream Tencent NCNN project source code, check LICENSE-NCNN.txt (originally https://github.com/Tencent/ncnn/blob/master/LICENSE.txt).
+
 Copyright 2020-2021 TANCOM SOFTWARE SOLUTIONS LTD
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:

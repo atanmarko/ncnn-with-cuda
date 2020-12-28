@@ -18,7 +18,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#if __ARM_NEON
+#if __ARM_NEON && !defined __CUDACC__ 
 #include <arm_neon.h>
 #endif
 #if __AVX__
@@ -100,7 +100,7 @@ public:
     // set all
     void fill(float v);
     void fill(int v);
-#if __ARM_NEON
+#if __ARM_NEON  && !defined __CUDACC__
     void fill(float32x4_t _v);
     void fill(uint16x4_t _v);
 #if __ARM_FEATURE_FP16_VECTOR_ARITHMETIC
@@ -897,7 +897,7 @@ inline float bfloat16_to_float32(unsigned short value)
     tmp.u = value << 16;
     return tmp.f;
 }
-#if __ARM_NEON
+#if __ARM_NEON  && !defined __CUDACC__
 inline uint16x4_t vcvt_bf16_f32(float32x4_t _v)
 {
     return vshrn_n_u32(vreinterpretq_u32_f32(_v), 16);
@@ -1060,14 +1060,14 @@ inline void Mat::fill(float _v)
     int size = (int)total();
     float* ptr = (float*)data;
 
-#if __ARM_NEON
+#if __ARM_NEON  && !defined __CUDACC__
     int nn = size >> 2;
     int remain = size - (nn << 2);
 #else
     int remain = size;
 #endif // __ARM_NEON
 
-#if __ARM_NEON
+#if __ARM_NEON  && !defined __CUDACC__
     float32x4_t _c = vdupq_n_f32(_v);
 #if __aarch64__
     if (nn > 0)
@@ -1100,7 +1100,7 @@ inline void Mat::fill(float _v)
             : "cc", "memory");
     }
 #endif // __aarch64__
-#endif // __ARM_NEON
+#endif // __ARM_NEON  && !defined __CUDACC__
     for (; remain > 0; remain--)
     {
         *ptr++ = _v;
@@ -1112,14 +1112,14 @@ inline void Mat::fill(int _v)
     int size = (int)total();
     int* ptr = (int*)data;
 
-#if __ARM_NEON
+#if __ARM_NEON  && !defined __CUDACC__ 
     int nn = size >> 2;
     int remain = size - (nn << 2);
 #else
     int remain = size;
 #endif // __ARM_NEON
 
-#if __ARM_NEON
+#if __ARM_NEON  && !defined __CUDACC__ 
     int32x4_t _c = vdupq_n_s32(_v);
 #if __aarch64__
     if (nn > 0)
@@ -1159,7 +1159,7 @@ inline void Mat::fill(int _v)
     }
 }
 
-#if __ARM_NEON
+#if __ARM_NEON  && !defined __CUDACC__ 
 inline void Mat::fill(float32x4_t _v)
 {
     int size = (int)total();
