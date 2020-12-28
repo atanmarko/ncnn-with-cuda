@@ -1,6 +1,7 @@
 // Tencent is pleased to support the open source community by making ncnn available.
 //
 // Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+// Modifications Copyright (C) 2020 TANCOM SOFTWARE SOLUTIONS Ltd. All rights reserved.
 //
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
@@ -17,7 +18,13 @@
 
 #include "platform.h"
 
+#include <memory>
+
 namespace ncnn {
+
+#if NCNN_CUDA
+class CudaAllocator;
+#endif
 
 #if NCNN_VULKAN
 class VkAllocator;
@@ -46,6 +53,15 @@ public:
 
     // workspace memory allocator
     Allocator* workspace_allocator;
+
+#if NCNN_CUDA
+    // blob memory allocator
+    std::shared_ptr<ncnn::CudaAllocator> blob_cuda_allocator;
+
+    // workspace memory allocator
+    std::shared_ptr<ncnn::CudaAllocator> workspace_cuda_allocator;
+
+#endif // NCNN_CUDA
 
 #if NCNN_VULKAN
     // blob memory allocator
@@ -86,6 +102,9 @@ public:
 
     // enable vulkan compute
     bool use_vulkan_compute;
+
+    // enable cuda compute
+    bool use_cuda_compute;
 
     // enable options for gpu inference
     bool use_fp16_packed;

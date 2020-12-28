@@ -26,7 +26,11 @@ public:
 
     virtual int load_param(const ParamDict& pd);
 
+    using Layer::load_model;
+
     virtual int load_model(const ModelBin& mb);
+
+    using Layer::forward;
 
     virtual int forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const;
 

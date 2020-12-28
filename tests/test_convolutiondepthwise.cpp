@@ -251,9 +251,70 @@ static int test_convolutiondepthwise_1()
     return 0;
 }
 
+
+static int test_convolutiondepthwise_2()
+{
+    static const int kdsp[16][4] = {
+        {1, 1, 1, 0},
+        {1, 1, 2, 0},
+        {2, 1, 1, 1},
+        {2, 1, 2, -233},
+        {3, 1, 1, 1},
+        {3, 1, 2, 1},
+        {3, 2, 1, 1},
+        {4, 1, 1, 2},
+        {4, 1, 2, -233},
+        {4, 2, 1, -234},
+        {5, 1, 1, -234},
+        {5, 1, 2, 2},
+        {5, 2, 2, 2},
+        {7, 1, 1, 3},
+        {7, 1, 2, 3},
+        {7, 2, 1, -233},
+    };
+
+    for (int i = 0; i < 16; i++)
+    {
+        const int k = kdsp[i][0];
+        const int d = kdsp[i][1];
+        const int s = kdsp[i][2];
+        const int p = kdsp[i][3];
+
+        int ret = 0
+                  || test_convolutiondepthwise(1280, 720, 3, 1, k, d, s, p, 1, 1)
+                  || test_convolutiondepthwise(1280, 720, 2, 2, k, d, s, p, 0, 1)
+                  || test_convolutiondepthwise(1280, 720, 2, 2, k, d, s, p, 1, 2)
+                  || test_convolutiondepthwise(1280, 720, 3, 3, k, d, s, p, 0, 3)
+                  || test_convolutiondepthwise(1280, 720, 4, 2, k, d, s, p, 1, 2)
+                  || test_convolutiondepthwise(1280, 720, 4, 4, k, d, s, p, 0, 4)
+                  || test_convolutiondepthwise(1280, 720, 7, 7, k, d, s, p, 1, 7)
+                  || test_convolutiondepthwise(1280, 720, 8, 8, k, d, s, p, 0, 2)
+                  || test_convolutiondepthwise(1280, 720, 8, 8, k, d, s, p, 1, 8)
+                  || test_convolutiondepthwise(1280, 720, 12, 12, k, d, s, p, 0, 4)
+                  || test_convolutiondepthwise(1280, 720, 15, 15, k, d, s, p, 1, 15)
+                  || test_convolutiondepthwise(1920, 1080, 16, 8, k, d, s, p, 0, 2)
+                  || test_convolutiondepthwise(1920, 1080, 16, 16, k, d, s, p, 1, 16)
+                  || test_convolutiondepthwise(1920, 1080, 1, 1, k, d, s, p, 1, 1)
+                  || test_convolutiondepthwise(1920, 1080, 2, 2, k, d, s, p, 0, 1)
+                  || test_convolutiondepthwise(1920, 1080, 2, 2, k, d, s, p, 1, 2)
+                  || test_convolutiondepthwise(1920, 1080, 3, 3, k, d, s, p, 0, 3)
+                  || test_convolutiondepthwise(1920, 1080, 4, 2, k, d, s, p, 1, 2)
+            ;
+
+        if (ret != 0)
+            return -1;
+    }
+
+    return 0;
+}
+
 int main()
 {
     SRAND(7767517);
 
-    return test_convolutiondepthwise_0() || test_convolutiondepthwise_1();
+    return 0
+           || test_convolutiondepthwise_0()
+           || test_convolutiondepthwise_1()
+           || test_convolutiondepthwise_2()
+        ;
 }

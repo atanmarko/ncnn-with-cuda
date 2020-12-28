@@ -293,6 +293,9 @@ static void copy_make_border_image(const Mat& src, Mat& dst, int top, int left, 
 
 int Padding::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Padding forward");
+#endif
     if (top == 0 && bottom == 0 && left == 0 && right == 0 && front == 0 && behind == 0)
     {
         top_blob = bottom_blob;

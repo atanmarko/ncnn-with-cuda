@@ -1,6 +1,7 @@
 // Tencent is pleased to support the open source community by making ncnn available.
 //
 // Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+// Modifications Copyright (C) 2020 TANCOM SOFTWARE SOLUTIONS Ltd. All rights reserved.
 //
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
@@ -42,6 +43,7 @@ class ModelBinFromDataReader : public ModelBin
 public:
     ModelBinFromDataReader(const DataReader& dr);
 
+    using ModelBin::load;
     virtual Mat load(int w, int type) const;
 
 protected:
@@ -54,11 +56,29 @@ public:
     // construct from weight blob array
     ModelBinFromMatArray(const Mat* weights);
 
+    using ModelBin::load;
     virtual Mat load(int w, int type) const;
 
 protected:
     mutable const Mat* weights;
 };
+
+#if NCNN_CUDA
+class CudaModelBinFromDataReader : public ModelBinFromDataReader
+{
+public:
+    CudaModelBinFromDataReader(const DataReader& dr);
+
+    using ModelBinFromDataReader::load;
+};
+
+class CudaModelBinFromMatArray : public ModelBinFromMatArray
+{
+    // Class used to point model initialization
+    // for cuda layers
+    using ModelBinFromMatArray::ModelBinFromMatArray;
+};
+#endif
 
 } // namespace ncnn
 

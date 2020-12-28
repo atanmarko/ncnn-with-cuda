@@ -799,6 +799,9 @@ static int lstm(const Mat& bottom_blob, Mat& top_blob, int reverse, const Mat& w
 
 int LSTM_x86::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("LSTM_x86 forward");
+#endif
 #if __AVX__
     int T = bottom_blob.h;
     int num_directions = direction == 2 ? 2 : 1;

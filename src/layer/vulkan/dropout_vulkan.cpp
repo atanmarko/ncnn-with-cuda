@@ -127,6 +127,9 @@ int Dropout_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int Dropout_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("Dropout_vulkan forward_inplace");
+#endif
     if (scale == 1.f)
     {
         return 0;
@@ -155,6 +158,10 @@ int Dropout_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, cons
 
 int Dropout_vulkan::forward_inplace(VkImageMat& bottom_top_blob, VkCompute& cmd, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("Dropout_vulkan forward_inplace");
+#endif
+
     if (scale == 1.f)
     {
         return 0;

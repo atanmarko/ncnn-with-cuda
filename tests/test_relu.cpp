@@ -39,7 +39,9 @@ static int test_relu_0()
            || test_relu(RandomMat(7, 9, 12), 0.f)
            || test_relu(RandomMat(7, 9, 12), 0.1f)
            || test_relu(RandomMat(3, 5, 13), 0.f)
-           || test_relu(RandomMat(3, 5, 13), 0.1f);
+           || test_relu(RandomMat(3, 5, 13), 0.1f)
+           || test_relu(RandomMat(1280, 768, 3), 0.f)
+           || test_relu(RandomMat(1280, 768, 3), 0.1f);
 }
 
 static int test_relu_1()

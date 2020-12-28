@@ -30,6 +30,9 @@ int Slice::load_param(const ParamDict& pd)
 
 int Slice::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Slice forward");
+#endif
     const Mat& bottom_blob = bottom_blobs[0];
     int dims = bottom_blob.dims;
     size_t elemsize = bottom_blob.elemsize;

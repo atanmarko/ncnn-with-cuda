@@ -1,6 +1,7 @@
 // Tencent is pleased to support the open source community by making ncnn available.
 //
-// Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+// Copyright (C) 2020 THL A29 Limited, a Tencent company. All rights reserved.
+// Modifications Copyright (C) 2020 TANCOM SOFTWARE SOLUTIONS Ltd. All rights reserved.
 //
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
@@ -153,6 +154,11 @@ protected:
     Layer* create_custom_layer(int index);
     int forward_layer(int layer_index, std::vector<Mat>& blob_mats, const Option& opt) const;
 
+#if NCNN_CUDA
+    int forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const Option& opt) const;
+#endif
+
+
 #if NCNN_VULKAN
     int forward_layer(int layer_index, std::vector<Mat>& blob_mats, std::vector<VkMat>& blob_mats_gpu, VkCompute& cmd, const Option& opt) const;
     int forward_layer(int layer_index, std::vector<Mat>& blob_mats, std::vector<VkMat>& blob_mats_gpu, std::vector<VkImageMat>& blob_mats_gpu_image, VkCompute& cmd, const Option& opt) const;
@@ -224,6 +230,30 @@ public:
     // type = 1, do not convert fp16/bf16 or / and packing
     int extract(int blob_index, Mat& feat, int type = 0);
 
+#if NCNN_CUDA
+#if NCNN_STRING
+    // set input by blob name
+    // return 0 if success
+    int input(const char* blob_name, const CudaMat& in);
+
+    // get result by blob name
+    // return 0 if success
+    // type = 0, default
+    // type = 1, do not convert fp16/bf16 or / and packing
+    int extract(const char* blob_name, CudaMat& feat, int type = 0);
+#endif
+
+    // set input by blob index
+    // return 0 if success
+    int input(int blob_index, const CudaMat& in);
+
+    // get result by blob index
+    // return 0 if success
+    // type = 0, default
+    // type = 1, do not convert fp16/bf16 or / and packing
+    int extract(int blob_index, CudaMat& feat, int type = 0);
+#endif
+
 #if NCNN_VULKAN
 #if NCNN_STRING
     // set input by blob name
@@ -268,6 +298,10 @@ private:
     const Net* net;
     std::vector<Mat> blob_mats;
     Option opt;
+
+#if NCNN_CUDA
+    std::vector<CudaMat> blob_mats_gpu;
+#endif
 
 #if NCNN_VULKAN
     VkAllocator* local_blob_vkallocator;

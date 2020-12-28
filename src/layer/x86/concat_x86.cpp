@@ -25,6 +25,9 @@ Concat_x86::Concat_x86()
 
 int Concat_x86::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Concat_x86 forward");
+#endif
     int dims = bottom_blobs[0].dims;
     int positive_axis = axis < 0 ? dims + axis : axis;
 

@@ -1,6 +1,7 @@
 // Tencent is pleased to support the open source community by making ncnn available.
 //
 // Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
+// Modifications Copyright (C) 2020 TANCOM SOFTWARE SOLUTIONS Ltd. All rights reserved.
 //
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
@@ -16,6 +17,12 @@
 
 #include "gpu.h"
 #include "pipeline.h"
+
+#include <algorithm>
+
+#if NCNN_CUDA
+#include "cuda_util.h"
+#endif
 
 #if __ANDROID_API__ >= 26
 #include <android/hardware_buffer.h>
@@ -242,6 +249,33 @@ void UnlockedPoolAllocator::fastFree(void* ptr)
     NCNN_LOGE("FATAL ERROR! unlocked pool allocator get wild %p", ptr);
     ncnn::fastFree(ptr);
 }
+
+#if NCNN_CUDA
+CudaAllocator::CudaAllocator(const CudaDevice* _cudev)
+{
+    cudev = _cudev;
+}
+
+void* CudaAllocator::fastMalloc(size_t size)
+{
+    void* buffer = nullptr;
+    checkCudaErrors(cudaSetDevice(cudev->device_index));
+    checkCudaErrors(cudaMalloc(&buffer, size));
+    return buffer;
+}
+
+void CudaAllocator::fastFree(void* ptr)
+{
+    checkCudaErrors(cudaFree(ptr));
+}
+
+std::shared_ptr<ncnn::CudaAllocator> get_current_gpu_allocator()
+{
+    return std::shared_ptr<ncnn::CudaAllocator>{new ncnn::CudaAllocator(ncnn::get_current_gpu_device())};
+}
+
+
+#endif
 
 #if NCNN_VULKAN
 VkAllocator::VkAllocator(const VulkanDevice* _vkdev)

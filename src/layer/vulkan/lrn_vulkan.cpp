@@ -242,6 +242,9 @@ int LRN_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int LRN_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("LRN_vulkan forward_inplace");
+#endif
     int w = bottom_top_blob.w;
     int h = bottom_top_blob.h;
     int channels = bottom_top_blob.c;
@@ -338,6 +341,9 @@ int LRN_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const Op
 
 int LRN_vulkan::forward_inplace(VkImageMat& bottom_top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("LRN_vulkan forward_inplace");
+#endif
     int w = bottom_top_blob.w;
     int h = bottom_top_blob.h;
     int channels = bottom_top_blob.c;

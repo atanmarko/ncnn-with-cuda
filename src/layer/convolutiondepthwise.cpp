@@ -130,6 +130,9 @@ int ConvolutionDepthWise::create_pipeline(const Option& opt)
 
 int ConvolutionDepthWise::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("ConvolutionDepthWise forward");
+#endif
     // convolv with NxN kernel
     // value = value + bias
 

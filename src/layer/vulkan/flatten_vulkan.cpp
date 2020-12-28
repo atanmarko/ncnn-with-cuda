@@ -173,6 +173,9 @@ int Flatten_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int Flatten_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Flatten_vulkan forward");
+#endif
     int dims = bottom_blob.dims;
 
     if (dims == 1)
@@ -264,6 +267,9 @@ int Flatten_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute
 
 int Flatten_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Flatten_vulkan forward");
+#endif
     int dims = bottom_blob.dims;
 
     if (dims == 1)

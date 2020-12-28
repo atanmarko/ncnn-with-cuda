@@ -44,7 +44,10 @@ static int test_flatten_0()
            || test_flatten(RandomMat(8, 12))
            || test_flatten(RandomMat(8, 2))
            || test_flatten(RandomMat(32))
-           || test_flatten(RandomMat(17));
+           || test_flatten(RandomMat(17))
+           || test_flatten(RandomMat(1280, 720, 3))
+           || test_flatten(RandomMat(1920, 1080, 3))
+        ;
 }
 
 int main()

@@ -1,6 +1,7 @@
 // Tencent is pleased to support the open source community by making ncnn available.
 //
 // Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+// Modifications Copyright (C) 2020 TANCOM SOFTWARE SOLUTIONS Ltd. All rights reserved.
 //
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
@@ -29,6 +30,19 @@
 
 #include <vulkan/vulkan.h>
 #endif // NCNN_VULKAN
+
+#if NCNN_CUDA
+#include "pipeline.h"
+#endif
+
+#if LOG_LAYERS
+#include <iostream>
+#include <string.h>
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+
+#define LOGL(X)  std::cout << ">>>> " << __FILENAME__ << "(" << __LINE__ << ")::"<< __FUNCTION__ <<"                              "<< X << std::endl;
+
+#endif
 
 namespace ncnn {
 
@@ -82,6 +96,9 @@ public:
     bool use_int8_inference;
     bool support_weight_fp16_storage;
 
+    // support cuda compute
+    bool support_cuda{false};
+
 public:
     // implement inference
     // return 0 if success
@@ -92,6 +109,7 @@ public:
     // return 0 if success
     virtual int forward_inplace(std::vector<Mat>& bottom_top_blobs, const Option& opt) const;
     virtual int forward_inplace(Mat& bottom_top_blob, const Option& opt) const;
+
 
 #if NCNN_VULKAN
 public:
@@ -123,6 +141,19 @@ public:
     // assigned immediately after creating this layer
     const VulkanDevice* vkdev;
 #endif // NCNN_VULKAN
+
+
+#if NCNN_CUDA
+    // assigned immediately after creating this layer
+    const CudaDevice* cudev;
+    virtual int load_model(const CudaModelBinFromMatArray& /*mb*/);
+    virtual int forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const;
+    virtual int forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const;
+
+    virtual int forward_inplace(std::vector<CudaMat>& bottom_top_blobs, const Option& opt) const;
+    virtual int forward_inplace(CudaMat& /*bottom_top_blob*/, const Option& /*opt*/) const;
+
+#endif
 
 public:
     // layer type index

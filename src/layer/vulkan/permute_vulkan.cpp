@@ -235,6 +235,9 @@ int Permute_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int Permute_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Permute_vulkan forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int channels = bottom_blob.c;
@@ -399,6 +402,9 @@ int Permute_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute
 
 int Permute_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Permute_vulkan forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int channels = bottom_blob.c;

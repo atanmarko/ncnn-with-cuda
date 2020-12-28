@@ -1,6 +1,7 @@
 // Tencent is pleased to support the open source community by making ncnn available.
 //
 // Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
+// Modifications Copyright (C) 2020 TANCOM SOFTWARE SOLUTIONS Ltd. All rights reserved.
 //
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
@@ -16,6 +17,43 @@
 #define NCNN_GPU_H
 
 #include "platform.h"
+
+#if NCNN_CUDA
+
+#include "cuda_util.h"
+
+namespace ncnn {
+
+struct CudaGpuInfo {
+    int type{-1};
+    cudaDeviceProp cuda_properties{};
+};
+
+
+class CudaDevice
+{
+public:
+	CudaDevice(int device_index);
+	~CudaDevice();
+
+	int device_index{-1};
+    CudaGpuInfo info{};
+
+
+};
+
+
+
+void try_initialize_cuda_gpu_instances();
+int get_cuda_gpu_count();
+int get_current_cuda_gpu_index();
+const CudaGpuInfo get_cuda_gpu_info(int device_index);
+CudaDevice* get_cuda_gpu_device(int cuda_device_index);
+CudaDevice* get_current_gpu_device();
+
+
+}
+#endif
 
 #if NCNN_VULKAN
 

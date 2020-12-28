@@ -35,6 +35,9 @@ int MVN::load_param(const ParamDict& pd)
 
 int MVN::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("MVN forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int channels = bottom_blob.c;

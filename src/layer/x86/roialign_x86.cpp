@@ -218,6 +218,9 @@ ROIAlign_x86::ROIAlign_x86()
 
 int ROIAlign_x86::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("ROIAlign_x86 forward");
+#endif
     const Mat& bottom_blob = bottom_blobs[0];
     const int width = bottom_blob.w;
     const int height = bottom_blob.h;

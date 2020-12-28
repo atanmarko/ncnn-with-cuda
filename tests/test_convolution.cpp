@@ -205,7 +205,7 @@ static int test_convolution_int8(int w, int h, int c, int outch, int kernel, int
         fprintf(stderr, "test_convolution_int8 failed w=%d h=%d c=%d outch=%d kernel=%d dilation=%d stride=%d pad=%d bias=%d requant=%d\n", w, h, c, outch, kernel, dilation, stride, pad, bias, requant);
     }
 
-    return 0;
+    return ret;
 }
 
 static int test_convolution_1()
@@ -265,7 +265,52 @@ static int test_convolution_1()
                   || test_convolution_int8(9, 7, 7, 7, k, d, s, p, 1, true)
                   || test_convolution_int8(9, 7, 8, 8, k, d, s, p, 1, true)
                   || test_convolution_int8(9, 7, 15, 15, k, d, s, p, 1, true)
-                  || test_convolution_int8(9, 7, 16, 16, k, d, s, p, 1, true);
+                  || test_convolution_int8(9, 7, 16, 16, k, d, s, p, 1, true)
+            ;
+
+        if (ret != 0)
+            return -1;
+    }
+
+    return 0;
+}
+
+
+static int test_convolution_3()
+{
+    static const int kdsp[16][4] = {
+        {1, 1, 1, 0},
+        {1, 1, 2, 0},
+        {2, 1, 1, 1},
+        {2, 1, 2, -233},
+        {3, 1, 1, 1},
+        {3, 1, 2, 1},
+        {3, 2, 1, 1},
+        {4, 1, 1, 2},
+        {4, 1, 2, -233},
+        {4, 2, 1, -234},
+        {5, 1, 1, -234},
+        {5, 1, 2, 2},
+        {5, 2, 2, 2},
+        {7, 1, 1, 3},
+        {7, 1, 2, 3},
+        {7, 2, 1, -233},
+    };
+
+    for (int i = 0; i < 16; i++)
+    {
+        const int k = kdsp[i][0];
+        const int d = kdsp[i][1];
+        const int s = kdsp[i][2];
+        const int p = kdsp[i][3];
+
+        int ret = 0
+                  || test_convolution(1280, 720, 3, 1, k, d, s, p, 1)
+                  || test_convolution(1280, 720, 3, 13, k, d, s, p, 0)
+                  || test_convolution(1920, 1080, 3, 4, k, d, s, p, 1)
+                  || test_convolution(1920, 1080, 3, 12, k, d, s, p, 0)
+                  || test_convolution(1920, 1080, 3, 12, k, d, s, p, 1)
+        ;
 
         if (ret != 0)
             return -1;
@@ -280,5 +325,7 @@ int main()
     return 0
            || test_convolution_0()
            || test_convolution_1()
-           || test_convolution_2();
+           || test_convolution_2()
+           || test_convolution_3()
+        ;
 }

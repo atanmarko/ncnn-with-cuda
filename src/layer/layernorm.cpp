@@ -47,6 +47,9 @@ int LayerNorm::load_model(const ModelBin& mb)
 
 int LayerNorm::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("LayerNorm forward_inplace");
+#endif
     // x = (x - mean) / sqrt(var + eps) * gamma + beta
 
     int w = bottom_top_blob.w;

@@ -187,6 +187,9 @@ int PixelShuffle_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int PixelShuffle_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("PixelShuffle_vulkan forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int channels = bottom_blob.c;
@@ -257,6 +260,9 @@ int PixelShuffle_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCo
 
 int PixelShuffle_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("PixelShuffle_vulkan forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int channels = bottom_blob.c;

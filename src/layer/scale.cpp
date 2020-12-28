@@ -54,6 +54,9 @@ int Scale::load_model(const ModelBin& mb)
 
 int Scale::forward_inplace(std::vector<Mat>& bottom_top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Scale forward_inplace");
+#endif
     Mat& bottom_top_blob = bottom_top_blobs[0];
     const Mat& scale_blob = bottom_top_blobs[1];
 
@@ -164,6 +167,9 @@ int Scale::forward_inplace(std::vector<Mat>& bottom_top_blobs, const Option& opt
 
 int Scale::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Scale forward_inplace");
+#endif
     std::vector<Mat> bottom_top_blobs(2);
     bottom_top_blobs[0] = bottom_top_blob;
     bottom_top_blobs[1] = scale_data;

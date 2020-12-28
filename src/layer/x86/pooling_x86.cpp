@@ -41,6 +41,9 @@ Pooling_x86::Pooling_x86()
 
 int Pooling_x86::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Pooling_x86 forward");
+#endif
     // max value in NxN window
     // avg value in NxN window
 

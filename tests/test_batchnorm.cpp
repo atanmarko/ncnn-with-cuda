@@ -52,7 +52,8 @@ static int test_batchnorm_0()
            || test_batchnorm(RandomMat(7, 9, 12), 0.f)
            || test_batchnorm(RandomMat(7, 9, 12), 0.001f)
            || test_batchnorm(RandomMat(3, 5, 13), 0.f)
-           || test_batchnorm(RandomMat(3, 5, 13), 0.001f);
+           || test_batchnorm(RandomMat(3, 5, 13), 0.001f)
+           || test_batchnorm(RandomMat(1280, 720, 3), 0.001f);
 }
 
 static int test_batchnorm_1()

@@ -230,6 +230,9 @@ int Slice_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int Slice_vulkan::forward(const std::vector<VkMat>& bottom_blobs, std::vector<VkMat>& top_blobs, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Slice_vulkan forward");
+#endif
     const VkMat& bottom_blob = bottom_blobs[0];
     int dims = bottom_blob.dims;
     size_t elemsize = bottom_blob.elemsize;
@@ -717,6 +720,9 @@ int Slice_vulkan::forward(const std::vector<VkMat>& bottom_blobs, std::vector<Vk
 
 int Slice_vulkan::forward(const std::vector<VkImageMat>& bottom_blobs, std::vector<VkImageMat>& top_blobs, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Slice_vulkan forward");
+#endif
     const VkImageMat& bottom_blob = bottom_blobs[0];
     int dims = bottom_blob.dims;
     size_t elemsize = bottom_blob.elemsize;

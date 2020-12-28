@@ -558,6 +558,10 @@ struct binary_op_rdiv
 
 int BinaryOp::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+
+#if LOG_LAYERS
+    LOGL("BinaryOp forward");
+#endif
     const Mat& bottom_blob = bottom_blobs[0];
     const Mat& bottom_blob1 = bottom_blobs[1];
 

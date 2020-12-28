@@ -34,6 +34,9 @@ int Gemm::load_param(const ParamDict& pd)
 
 int Gemm::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Gemm forward");
+#endif
     const Mat& A0 = bottom_blobs[0];
     const Mat& B0 = bottom_blobs[1];
 

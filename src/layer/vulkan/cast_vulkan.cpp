@@ -188,6 +188,9 @@ int Cast_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int Cast_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Cast_vulkan forward");
+#endif
     if (type_from == type_to)
     {
         top_blob = bottom_blob;
@@ -286,6 +289,9 @@ int Cast_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& c
 
 int Cast_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Cast_vulkan forward_inplace");
+#endif
     if (type_from == type_to)
     {
         top_blob = bottom_blob;

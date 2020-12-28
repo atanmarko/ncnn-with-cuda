@@ -33,6 +33,9 @@ static inline float sigmoid(float x)
 
 int Yolov3DetectionOutput_x86::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Yolov3DetectionOutput_x86 forward");
+#endif
     // gather all box
     std::vector<BBoxRect> all_bbox_rects;
 

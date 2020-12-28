@@ -31,6 +31,9 @@ int Concat::load_param(const ParamDict& pd)
 
 int Concat::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Concat forward");
+#endif
     int dims = bottom_blobs[0].dims;
     size_t elemsize = bottom_blobs[0].elemsize;
     int positive_axis = axis < 0 ? dims + axis : axis;

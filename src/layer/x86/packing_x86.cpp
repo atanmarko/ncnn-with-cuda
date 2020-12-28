@@ -27,6 +27,9 @@ Packing_x86::Packing_x86()
 
 int Packing_x86::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Packing_x86 forward");
+#endif
     size_t elemsize = bottom_blob.elemsize;
     int elempack = bottom_blob.elempack;
 

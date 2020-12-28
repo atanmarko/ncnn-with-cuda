@@ -317,6 +317,9 @@ int Crop_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int Crop_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Crop_vulkan forward");
+#endif
     int dims = bottom_blob.dims;
     size_t elemsize = bottom_blob.elemsize;
     int elempack = bottom_blob.elempack;
@@ -474,6 +477,9 @@ int Crop_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& c
 
 int Crop_vulkan::forward(const std::vector<VkMat>& bottom_blobs, std::vector<VkMat>& top_blobs, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Crop_vulkan forward");
+#endif
     const VkMat& bottom_blob = bottom_blobs[0];
     const VkMat& reference_blob = bottom_blobs[1];
     VkMat& top_blob = top_blobs[0];

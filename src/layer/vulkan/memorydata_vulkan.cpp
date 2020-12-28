@@ -77,6 +77,9 @@ int MemoryData_vulkan::upload_model(VkTransfer& cmd, const Option& opt)
 
 int MemoryData_vulkan::forward(const std::vector<VkMat>& /*bottom_blobs*/, std::vector<VkMat>& top_blobs, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("MemoryData_vulkan forward");
+#endif
     VkMat& top_blob = top_blobs[0];
 
     cmd.record_clone(data_gpu, top_blob, opt);
@@ -88,6 +91,9 @@ int MemoryData_vulkan::forward(const std::vector<VkMat>& /*bottom_blobs*/, std::
 
 int MemoryData_vulkan::forward(const std::vector<VkImageMat>& /*bottom_blobs*/, std::vector<VkImageMat>& top_blobs, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("MemoryData_vulkan forward");
+#endif
     VkImageMat& top_blob = top_blobs[0];
 
     cmd.record_clone(data_gpu_image, top_blob, opt);

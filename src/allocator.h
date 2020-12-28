@@ -1,6 +1,7 @@
 // Tencent is pleased to support the open source community by making ncnn available.
 //
 // Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
+// Modifications Copyright (C) 2020 TANCOM SOFTWARE SOLUTIONS Ltd. All rights reserved.
 //
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
@@ -26,6 +27,10 @@
 
 #if NCNN_VULKAN
 #include <vulkan/vulkan.h>
+#endif // NCNN_VULKAN
+
+#if NCNN_CUDA
+#include <memory>
 #endif // NCNN_VULKAN
 
 #if __ANDROID_API__ >= 26
@@ -199,6 +204,30 @@ private:
     std::list<std::pair<size_t, void*> > budgets;
     std::list<std::pair<size_t, void*> > payouts;
 };
+
+#if NCNN_CUDA
+
+class CudaDevice;
+
+class CudaAllocator  : public Allocator
+{
+public:
+    CudaAllocator(const CudaDevice* _cudev);
+
+    virtual ~CudaAllocator() {
+
+    }
+
+    virtual void* fastMalloc(size_t size);
+    virtual void fastFree(void* ptr);
+
+public:
+    const CudaDevice* cudev;
+};
+
+std::shared_ptr<ncnn::CudaAllocator> get_current_gpu_allocator();
+
+#endif
 
 #if NCNN_VULKAN
 

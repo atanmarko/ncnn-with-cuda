@@ -248,6 +248,9 @@ int Packing_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int Packing_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Packing_vulkan forward");
+#endif
     int elempack = bottom_blob.elempack;
     //     NCNN_LOGE("Packing_vulkan b2b %d %d   %d %d   %d %d", elempack, out_elempack, cast_type_from, cast_type_to, storage_type_from, storage_type_to);
 
@@ -417,6 +420,9 @@ int Packing_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute
 
 int Packing_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Packing_vulkan forward");
+#endif
     int elempack = bottom_blob.elempack;
     //     NCNN_LOGE("Packing_vulkan i2i %d %d   %d %d   %d %d", elempack, out_elempack, cast_type_from, cast_type_to, storage_type_from, storage_type_to);
 
@@ -571,6 +577,9 @@ int Packing_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob,
 
 int Packing_vulkan::forward(const VkMat& bottom_blob, VkImageMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Packing_vulkan forward");
+#endif
     int elempack = bottom_blob.elempack;
     //     NCNN_LOGE("Packing_vulkan b2i %d %d   %d %d   %d %d", elempack, out_elempack, cast_type_from, cast_type_to, storage_type_from, storage_type_to);
 
@@ -706,6 +715,9 @@ int Packing_vulkan::forward(const VkMat& bottom_blob, VkImageMat& top_blob, VkCo
 
 int Packing_vulkan::forward(const VkImageMat& bottom_blob, VkMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Packing_vulkan forward");
+#endif
     int elempack = bottom_blob.elempack;
     //     NCNN_LOGE("Packing_vulkan i2b %d %d   %d %d   %d %d", elempack, out_elempack, cast_type_from, cast_type_to, storage_type_from, storage_type_to);
 

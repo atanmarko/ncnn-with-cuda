@@ -41,6 +41,9 @@ static inline signed char float2int8(float v)
 
 int Quantize::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Quantize forward");
+#endif
     int dims = bottom_blob.dims;
 
     if (dims == 1)

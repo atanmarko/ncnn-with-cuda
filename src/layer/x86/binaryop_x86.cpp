@@ -1285,6 +1285,9 @@ struct binary_op_rdiv_pack4
 
 int BinaryOp_x86::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("BinaryOp_x86 forward");
+#endif
 #if __SSE2__
     const Mat& bottom_blob = bottom_blobs[0];
     const Mat& bottom_blob1 = bottom_blobs[1];
@@ -1361,6 +1364,9 @@ int BinaryOp_x86::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>
 
 int BinaryOp_x86::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("BinaryOp_x86 forward_inplace");
+#endif
 #if __SSE2__
     int elempack = bottom_top_blob.elempack;
 

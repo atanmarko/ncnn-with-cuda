@@ -271,6 +271,9 @@ int Normalize_vulkan::upload_model(VkTransfer& cmd, const Option& opt)
 
 int Normalize_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Normalize_vulkan forward_inplace");
+#endif
     // int w = bottom_top_blob.w;
     // int h = bottom_top_blob.h;
     // int size = w * h;
@@ -432,6 +435,9 @@ int Normalize_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, co
 
 int Normalize_vulkan::forward_inplace(VkImageMat& bottom_top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Normalize_vulkan forward_inplace");
+#endif
     // int w = bottom_top_blob.w;
     // int h = bottom_top_blob.h;
     // int size = w * h;

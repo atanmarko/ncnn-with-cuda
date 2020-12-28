@@ -266,6 +266,9 @@ int Interp_vulkan::destroy_pipeline(const Option& /*opt*/)
 
 int Interp_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Interp_vulkan forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
 
@@ -301,6 +304,9 @@ int Interp_vulkan::forward(const VkMat& bottom_blob, VkMat& top_blob, VkCompute&
 
 int Interp_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Interp_vulkan forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
 
@@ -336,6 +342,9 @@ int Interp_vulkan::forward(const VkImageMat& bottom_blob, VkImageMat& top_blob, 
 
 int Interp_vulkan::forward(const std::vector<VkMat>& bottom_blobs, std::vector<VkMat>& top_blobs, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Interp_vulkan forward");
+#endif
     const VkMat& bottom_blob = bottom_blobs[0];
     const VkMat& reference_blob = bottom_blobs[1];
     VkMat& top_blob = top_blobs[0];
@@ -496,6 +505,9 @@ int Interp_vulkan::forward(const std::vector<VkMat>& bottom_blobs, std::vector<V
 
 int Interp_vulkan::forward(const std::vector<VkImageMat>& bottom_blobs, std::vector<VkImageMat>& top_blobs, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Interp_vulkan forward");
+#endif
     const VkImageMat& bottom_blob = bottom_blobs[0];
     const VkImageMat& reference_blob = bottom_blobs[1];
     VkImageMat& top_blob = top_blobs[0];

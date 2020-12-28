@@ -32,6 +32,9 @@ Dropout_x86::Dropout_x86()
 
 int Dropout_x86::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Dropout_x86 forward_inplace");
+#endif
     if (scale == 1.f)
     {
         return 0;

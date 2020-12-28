@@ -31,6 +31,9 @@ int ReLU::load_param(const ParamDict& pd)
 
 int ReLU::forward_inplace_int8(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("ReLU forward_inplace_int8");
+#endif
     int w = bottom_top_blob.w;
     int h = bottom_top_blob.h;
     int channels = bottom_top_blob.c;
@@ -71,6 +74,9 @@ int ReLU::forward_inplace_int8(Mat& bottom_top_blob, const Option& opt) const
 
 int ReLU::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("ReLU forward_inplace");
+#endif
     if (bottom_top_blob.elemsize == 1u)
         return ReLU::forward_inplace_int8(bottom_top_blob, opt);
 

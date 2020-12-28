@@ -1,6 +1,7 @@
 // Tencent is pleased to support the open source community by making ncnn available.
 //
 // Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+// Modifications Copyright (C) 2020 TANCOM SOFTWARE SOLUTIONS Ltd. All rights reserved.
 //
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
@@ -28,6 +29,10 @@
 #include <android/hardware_buffer.h>
 #endif // __ANDROID_API__ >= 26
 #endif // NCNN_VULKAN
+
+#if NCNN_CUDA
+#include <assert.h>
+#endif
 
 namespace ncnn {
 
@@ -176,6 +181,69 @@ Mat Mat::from_float16(const unsigned short* data, int size)
     }
 
     return m;
+}
+
+void Mat::print_mat(const Mat& mat)
+{
+    for (int i=0; i< mat.c; i++)
+    {
+        Mat tmp = mat.channel(i);
+
+        std::cout << "[";
+        for (int j=0;j<mat.h;j++)
+        {
+            float* row = tmp.row(j);
+            std::cout << "[";
+            for (int k=0; k<tmp.w; k++ )
+            {
+                std::cout << row[k] << " ";
+            }
+            std::cout << "]";
+        }
+        std::cout << "]" << std::endl;
+    }
+}
+
+void Mat::print_mat_int(const Mat& mat)
+{
+    for (int i=0; i< mat.c; i++)
+    {
+        Mat tmp = mat.channel(i);
+
+        std::cout << "[";
+        for (int j=0;j<mat.h;j++)
+        {
+            int* row = tmp.row<int>(j);
+            std::cout << "[";
+            for (int k=0; k<tmp.w; k++ )
+            {
+                std::cout << row[k] << " ";
+            }
+            std::cout << "]";
+        }
+        std::cout << "]" << std::endl;
+    }
+}
+
+void Mat::print_mat_char(const Mat& mat)
+{
+    for (int i=0; i< mat.c; i++)
+    {
+        Mat tmp = mat.channel(i);
+
+        std::cout << "[";
+        for (int j=0;j<mat.h;j++)
+        {
+            signed char* row = tmp.row<signed char>(j);
+            std::cout << "[";
+            for (int k=0; k<tmp.w; k++ )
+            {
+                std::cout << static_cast<int>(row[k]) << " ";
+            }
+            std::cout << "]";
+        }
+        std::cout << "]" << std::endl;
+    }
 }
 
 #if NCNN_VULKAN
@@ -433,6 +501,146 @@ void convert_packing(const Mat& src, Mat& dst, int _elempack, const Option& opt)
     delete packing;
 }
 
+#if NCNN_CUDA
+
+void copy_make_border(const CudaMat& src, CudaMat& dst, int top, int bottom, int left, int right, int type, float v, const Option& opt)
+{
+    Layer* padding = create_layer(LayerType::Padding);
+
+    ParamDict pd;
+    pd.set(0, top);
+    pd.set(1, bottom);
+    pd.set(2, left);
+    pd.set(3, right);
+    pd.set(4, type);
+    pd.set(5, v);
+
+    padding->load_param(pd);
+
+    padding->create_pipeline(opt);
+
+    padding->forward(src, dst, opt);
+
+    padding->destroy_pipeline(opt);
+
+    delete padding;
+}
+
+void convert_packing(const CudaMat& src, CudaMat& dst, int _elempack, const Option& opt)
+{
+    Layer* packing = create_layer(LayerType::Packing);
+
+    ParamDict pd;
+    pd.set(0, _elempack);
+
+    packing->load_param(pd);
+
+    packing->create_pipeline(opt);
+
+    packing->forward(src, dst, opt);
+
+    packing->destroy_pipeline(opt);
+
+    delete packing;
+}
+
+void cast_float32_to_float16(const CudaMat& src, CudaMat& dst, const Option& opt)
+{
+    Layer* cast = create_layer(LayerType::Cast);
+
+    ParamDict pd;
+    pd.set(0, 1);
+    pd.set(1, 2);
+
+    cast->load_param(pd);
+
+    cast->create_pipeline(opt);
+
+    cast->forward(src, dst, opt);
+
+    cast->destroy_pipeline(opt);
+
+    delete cast;
+}
+
+void cast_float16_to_float32(const CudaMat& src, CudaMat& dst, const Option& opt)
+{
+    Layer* cast = create_layer(LayerType::Cast);
+
+    ParamDict pd;
+    pd.set(0, 2);
+    pd.set(1, 1);
+
+    cast->load_param(pd);
+
+    cast->create_pipeline(opt);
+
+    cast->forward(src, dst, opt);
+
+    cast->destroy_pipeline(opt);
+
+    delete cast;
+}
+
+void quantize_float32_to_int8(const CudaMat& src, CudaMat& dst, float scale, const Option& opt)
+{
+    Layer* quantize = create_layer(LayerType::Quantize);
+
+    ParamDict pd;
+    pd.set(0, scale);
+
+    quantize->load_param(pd);
+
+    quantize->create_pipeline(opt);
+
+    quantize->forward(src, dst, opt);
+
+    quantize->destroy_pipeline(opt);
+
+    delete quantize;
+}
+
+void cast_float32_to_bfloat16(const CudaMat& src, CudaMat& dst, const Option& opt)
+{
+    Layer* cast = create_layer(LayerType::Cast);
+
+    ParamDict pd;
+    pd.set(0, 1);
+    pd.set(1, 4);
+
+    cast->load_param(pd);
+
+    cast->create_pipeline(opt);
+
+    cast->forward(src, dst, opt);
+
+    cast->destroy_pipeline(opt);
+
+    delete cast;
+}
+
+void cast_bfloat16_to_float32(const CudaMat& src, CudaMat& dst, const Option& opt)
+{
+    Layer* cast = create_layer(LayerType::Cast);
+
+    ParamDict pd;
+    pd.set(0, 4);
+    pd.set(1, 1);
+
+    cast->load_param(pd);
+
+    cast->create_pipeline(opt);
+
+    cast->forward(src, dst, opt);
+
+    cast->destroy_pipeline(opt);
+
+    delete cast;
+}
+
+#endif
+
+
 void flatten(const Mat& src, Mat& dst, const Option& opt)
 {
     Layer* flatten = create_layer(LayerType::Flatten);
@@ -614,5 +822,6 @@ void requantize_int8_to_int8(const Mat& src, Mat& dst, float scale_in, float sca
 
     delete requantize;
 }
+
 
 } // namespace ncnn

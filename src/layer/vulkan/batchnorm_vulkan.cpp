@@ -154,6 +154,9 @@ int BatchNorm_vulkan::upload_model(VkTransfer& cmd, const Option& opt)
 
 int BatchNorm_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("BatchNorm_vulkan forward_inplace");
+#endif
     int elempack = bottom_top_blob.elempack;
 
     std::vector<VkMat> bindings(3);
@@ -179,6 +182,9 @@ int BatchNorm_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, co
 
 int BatchNorm_vulkan::forward_inplace(VkImageMat& bottom_top_blob, VkCompute& cmd, const Option& /*opt*/) const
 {
+#if LOG_LAYERS
+    LOGL("BatchNorm_vulkan forward_inplace");
+#endif
     int elempack = bottom_top_blob.elempack;
 
     std::vector<VkImageMat> bindings(4);

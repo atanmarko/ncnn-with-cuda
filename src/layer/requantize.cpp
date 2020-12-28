@@ -58,6 +58,9 @@ int Requantize::load_model(const ModelBin& mb)
 
 int Requantize::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Requantize forward");
+#endif
     int dims = bottom_blob.dims;
 
     if (dims == 1)

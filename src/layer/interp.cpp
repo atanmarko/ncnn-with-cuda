@@ -416,6 +416,9 @@ static void resize_bicubic_image(const Mat& src, Mat& dst, float* alpha, int* xo
 
 int Interp::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Interp forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
 
@@ -451,6 +454,9 @@ int Interp::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) co
 
 int Interp::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Interp forward");
+#endif
     const Mat& bottom_blob = bottom_blobs[0];
     const Mat& reference_blob = bottom_blobs[1];
     Mat& top_blob = top_blobs[0];

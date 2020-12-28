@@ -77,6 +77,9 @@ static void copy_cut_border_image(const Mat& src, Mat& dst, int top, int left)
 
 int Crop::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Crop forward");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int channels = bottom_blob.c;

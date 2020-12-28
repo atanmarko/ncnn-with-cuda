@@ -40,6 +40,9 @@ int Bias::load_model(const ModelBin& mb)
 
 int Bias::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("BatchNorm forward_inplace");
+#endif
     int w = bottom_top_blob.w;
     int h = bottom_top_blob.h;
     int channels = bottom_top_blob.c;

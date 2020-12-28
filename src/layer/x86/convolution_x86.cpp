@@ -297,6 +297,9 @@ int Convolution_x86::destroy_pipeline(const Option& opt)
 
 int Convolution_x86::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Convolution_x86 forward");
+#endif
     // convolv with NxN kernel
     // value = value + bias
 

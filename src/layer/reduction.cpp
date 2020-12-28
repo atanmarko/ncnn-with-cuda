@@ -835,6 +835,9 @@ struct reduction_op_min
 
 int Reduction::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Reduction forward");
+#endif
     int dims = bottom_blob.dims;
     int axes_flag[3] = {0};
     bool reduce_w = false;

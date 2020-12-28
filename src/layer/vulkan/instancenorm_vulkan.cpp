@@ -409,6 +409,9 @@ int InstanceNorm_vulkan::upload_model(VkTransfer& cmd, const Option& opt)
 
 int InstanceNorm_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("InstanceNorm_vulkan forward_inplace");
+#endif
     int w = bottom_top_blob.w;
     int h = bottom_top_blob.h;
     int c = bottom_top_blob.c;
@@ -646,6 +649,9 @@ int InstanceNorm_vulkan::forward_inplace(VkMat& bottom_top_blob, VkCompute& cmd,
 
 int InstanceNorm_vulkan::forward_inplace(VkImageMat& bottom_top_blob, VkCompute& cmd, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("InstanceNorm_vulkan forward_inplace");
+#endif
     int w = bottom_top_blob.w;
     int h = bottom_top_blob.h;
     int c = bottom_top_blob.c;

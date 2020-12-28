@@ -106,6 +106,9 @@ int Convolution::create_pipeline(const Option& opt)
 
 int Convolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Convolution forward");
+#endif
     // convolv with NxN kernel
     // value = value + bias
 
@@ -175,6 +178,9 @@ int Convolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& op
     if (bottom_blob_bordered.empty())
         return -100;
 
+//    std::cout << "CPU Input bottom_blob_bordered:" << std::endl;
+//    ncnn::Mat::print_mat(bottom_blob_bordered);
+
     w = bottom_blob_bordered.w;
     h = bottom_blob_bordered.h;
 
@@ -235,6 +241,10 @@ int Convolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& op
                         float val = sptr[space_ofs[k]]; // 20.72
                         float w = kptr[k];
                         sum += val * w; // 41.45
+//                      if (p == 0 && i == 8 && j == 0)
+//                        if (p == 0)
+//                            std::cout << " Row:" << i * stride_h << " Column:" << j * stride_w <<  " CPU maxk:" << maxk  << " k:" <<
+//                                k << " gpu_space_offset[k]:" << space_ofs[k] << " val: " << val << " w:" << w << " sum: " << sum << std::endl;
                     }
 
                     kptr += maxk;
@@ -336,6 +346,9 @@ static inline signed char float2int8(float v)
 
 int Convolution::forward_int8(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Convolution forward_int8");
+#endif
     int w = bottom_blob.w;
     int h = bottom_blob.h;
     int channels = bottom_blob.c;
@@ -399,6 +412,7 @@ int Convolution::forward_int8(const Mat& bottom_blob, Mat& top_blob, const Optio
     for (int p = 0; p < num_output; p++)
     {
         signed char* outptr = top_blob.channel(p);
+        int channel_index_counter = 0;
 
         for (int i = 0; i < outh; i++)
         {
@@ -419,6 +433,10 @@ int Convolution::forward_int8(const Mat& bottom_blob, Mat& top_blob, const Optio
                         int val = sptr[space_ofs[k]];
                         int w = kptr[k];
                         sum += val * w;
+//                        if (p == 0 && i == 0 && j == 0)
+//                        if (p == 0 && i == 3)
+//                            std::cout << "CPU Row:" << i * stride_h << " Column:" << j * stride_w <<  " CPU maxk:" << maxk  << " k:" <<
+//                                k << " gpu_space_offset[k]:" << space_ofs[k] << " val: " << val << " w:" << w << " sum: " << sum << std::endl;
                     }
 
                     kptr += maxk;
@@ -448,7 +466,14 @@ int Convolution::forward_int8(const Mat& bottom_blob, Mat& top_blob, const Optio
                     }
 
                     outptr[0] = sums8;
+//                    if (p == 0 && i == 3)
+//                    {
+//                        printf("CPU Output output_index: %d scale_in: %f scale_out: %f sumfp32: %f sums8: %d output[output_index]: %d\n",
+//                               channel_index_counter, scale_in, scale_out, sumfp32, sums8, outptr[0]);
+//                    }
+
                     outptr += 1;
+                    channel_index_counter +=1;
                 }
                 else
                 {

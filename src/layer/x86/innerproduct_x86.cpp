@@ -127,6 +127,9 @@ int InnerProduct_x86::destroy_pipeline(const Option& opt)
 
 int InnerProduct_x86::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("InnerProduct_x86 forward");
+#endif
     if (opt.use_int8_inference && weight_data.elemsize == (size_t)1u)
     {
         // TODO

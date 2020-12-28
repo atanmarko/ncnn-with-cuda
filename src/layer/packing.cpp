@@ -38,6 +38,9 @@ int Packing::load_param(const ParamDict& pd)
 
 int Packing::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("Packing forward");
+#endif
     int elempack = bottom_blob.elempack;
 
     if (elempack == out_elempack)
@@ -180,5 +183,13 @@ int Packing::forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) c
 
     return 0;
 }
+
+#if NCNN_CUDA
+int Packing::forward(const CudaMat& /*bottom_blob*/, CudaMat& /*top_blob*/, const Option& /*opt*/) const
+{
+    return -1;
+}
+#endif
+
 
 } // namespace ncnn

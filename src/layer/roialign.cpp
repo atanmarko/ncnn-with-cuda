@@ -77,6 +77,9 @@ static inline float bilinear_interpolate(const float* ptr, int w, int h, float x
 
 int ROIAlign::forward(const std::vector<Mat>& bottom_blobs, std::vector<Mat>& top_blobs, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("ROIAlign forward");
+#endif
     const Mat& bottom_blob = bottom_blobs[0];
     int w = bottom_blob.w;
     int h = bottom_blob.h;

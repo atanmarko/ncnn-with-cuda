@@ -40,6 +40,10 @@ int PReLU::load_model(const ModelBin& mb)
 
 int PReLU::forward_inplace(Mat& bottom_top_blob, const Option& opt) const
 {
+#if LOG_LAYERS
+    LOGL("PReLU forward_inplace");
+#endif
+
     int dims = bottom_top_blob.dims;
 
     if (dims == 1)

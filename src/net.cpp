@@ -1,6 +1,7 @@
 // Tencent is pleased to support the open source community by making ncnn available.
 //
-// Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+// Copyright (C) 2020 THL A29 Limited, a Tencent company. All rights reserved.
+// Modifications Copyright (C) 2020 TANCOM SOFTWARE SOLUTIONS Ltd. All rights reserved.
 //
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
@@ -217,7 +218,7 @@ int Net::load_param(const DataReader& dr)
 
         layer->type = std::string(layer_type);
         layer->name = std::string(layer_name);
-        //         NCNN_LOGE("new layer %d %s", i, layer_name);
+//                 NCNN_LOGE("new layer %d %s", i, layer_name);
 
         layer->bottoms.resize(bottom_count);
 
@@ -234,7 +235,7 @@ int Net::load_param(const DataReader& dr)
                 bottom_blob_index = blob_index;
 
                 blob.name = std::string(bottom_name);
-                //                 NCNN_LOGE("new blob %s", bottom_name);
+                                 NCNN_LOGE("new blob %s", bottom_name);
 
                 blob_index++;
             }
@@ -243,6 +244,7 @@ int Net::load_param(const DataReader& dr)
 
             blob.consumers.push_back(i);
 
+            //std::cout << "Layer: " << layer->type << " index j: " << j << " bottom_blob_index: " << bottom_blob_index << std::endl;
             layer->bottoms[j] = bottom_blob_index;
         }
 
@@ -1393,12 +1395,355 @@ int Net::forward_layer(int layer_index, std::vector<Mat>& blob_mats, const Optio
         }
     }
 
-    //     NCNN_LOGE("forward_layer %d %s done", layer_index, layer->name.c_str());
-    //     const Mat& blob = blob_mats[layer->tops[0]];
-    //     NCNN_LOGE("[%-2d %-16s %-16s]  %d    blobs count = %-3d   size = %-3d x %-3d", layer_index, layer->type.c_str(), layer->name.c_str(), layer->tops[0], blob.c, blob.h, blob.w);
+//         NCNN_LOGE("forward_layer %d %s done", layer_index, layer->name.c_str());
+//         const Mat& blob = blob_mats[layer->tops[0]];
+//         NCNN_LOGE("[%-2d %-16s %-16s]  %d    blobs count = %-3d   size = %-3d x %-3d", layer_index, layer->type.c_str(), layer->name.c_str(), layer->tops[0], blob.c, blob.h, blob.w);
 
     return 0;
 }
+
+#if NCNN_CUDA
+int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const Option& opt) const
+{
+    const Layer* layer = layers[layer_index];
+
+         //NCNN_LOGE("forward_layer %d %s", layer_index, layer->name.c_str());
+
+    if (layer->one_blob_only)
+    {
+        // load bottom blob
+        int bottom_blob_index = layer->bottoms[0];
+        int top_blob_index = layer->tops[0];
+
+        if (blob_mats[bottom_blob_index].dims == 0)
+        {
+            int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats, opt);
+            if (ret != 0)
+                return ret;
+        }
+
+        CudaMat bottom_blob = blob_mats[bottom_blob_index];
+
+        if (opt.lightmode)
+        {
+            // delete after taken in light mode
+            blob_mats[bottom_blob_index].release();
+            // deep copy for inplace forward if data is shared
+            if (layer->support_inplace && *bottom_blob.refcount != 1)
+            {
+                bottom_blob = bottom_blob.clone();
+            }
+        }
+
+        if (opt.use_bf16_storage)
+        {
+            if (bottom_blob.elembits() == 32 && layer->support_bf16_storage)
+            {
+                CudaMat bottom_blob_bf16;
+                cast_float32_to_bfloat16(bottom_blob, bottom_blob_bf16, opt);
+                bottom_blob = bottom_blob_bf16;
+            }
+            if (bottom_blob.elembits() == 16 && !layer->support_bf16_storage)
+            {
+                CudaMat bottom_blob_fp32;
+                cast_bfloat16_to_float32(bottom_blob, bottom_blob_fp32, opt);
+                bottom_blob = bottom_blob_fp32;
+            }
+        }
+        // *INDENT-ON*
+        // clang-format on
+
+        if (opt.use_packing_layout)
+        {
+            // resolve dst_elempack
+            int dims = bottom_blob.dims;
+            int elemcount = 0;
+            if (dims == 1) elemcount = bottom_blob.elempack * bottom_blob.w;
+            if (dims == 2) elemcount = bottom_blob.elempack * bottom_blob.h;
+            if (dims == 3) elemcount = bottom_blob.elempack * bottom_blob.c;
+
+            int dst_elempack = 1;
+            if (layer->support_packing)
+            {
+                if (elemcount % 4 == 0)
+                    dst_elempack = 4;
+            }
+
+            CudaMat bottom_blob_packed;
+            convert_packing(bottom_blob, bottom_blob_packed, dst_elempack, opt);
+            bottom_blob = bottom_blob_packed;
+        }
+
+        // forward
+        if (opt.lightmode && layer->support_inplace)
+        {
+            CudaMat& bottom_top_blob = bottom_blob;
+
+            Mat bottom_top_blob_cpu;
+            if (!layer->support_cuda)
+            {
+                cudaDeviceSynchronize();
+                bottom_top_blob_cpu = bottom_top_blob;
+            }
+            int ret{-1};
+#if NCNN_BENCHMARK
+            double start = get_current_time();
+            if (!layer->support_cuda) {
+                ret = layer->forward_inplace(bottom_top_blob_cpu, opt);
+                double end_cpu = get_current_time();
+                benchmark(layer, bottom_top_blob_cpu, bottom_top_blob_cpu, start, end_cpu);
+            } else {
+                ret = layer->forward_inplace(bottom_top_blob, opt);
+                double end = get_current_time();
+                benchmark(layer, bottom_top_blob, bottom_top_blob, start, end);
+            }
+#else
+            if (!layer->support_cuda)
+            {
+                ret = layer->forward_inplace(bottom_top_blob_cpu, opt);
+            } else {
+                ret = layer->forward_inplace(bottom_top_blob, opt);
+            }
+
+#endif // NCNN_BENCHMARK
+            if (ret != 0)
+                return ret;
+
+            if (!layer->support_cuda) {
+                std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+                bottom_top_blob = CudaMat{bottom_top_blob_cpu, cuda_allocator};
+            }
+
+            // store top blob
+            blob_mats[top_blob_index] = bottom_top_blob;
+        }
+        else
+        {
+            CudaMat top_blob;
+
+            Mat top_blob_cpu;
+            Mat bottom_blob_cpu;
+            if (!layer->support_cuda)
+            {
+                cudaDeviceSynchronize();
+                bottom_blob_cpu = bottom_blob;
+            }
+            int ret{-1};
+#if NCNN_BENCHMARK
+            double start = get_current_time();
+            if (!layer->support_cuda)
+            {
+                ret = layer->forward(bottom_blob_cpu, top_blob_cpu, opt);
+                double end_cpu = get_current_time();
+                benchmark(layer, bottom_blob_cpu, top_blob_cpu, start, end);
+            }
+            else
+            {
+                ret = layer->forward(bottom_blob, top_blob, opt);
+                double end = get_current_time();
+                benchmark(layer, bottom_blob, top_blob, start, end);
+            }
+#else
+            if (!layer->support_cuda)
+            {
+                ret = layer->forward(bottom_blob_cpu, top_blob_cpu, opt);
+            } else {
+                ret = layer->forward(bottom_blob, top_blob, opt);
+            }
+#endif // NCNN_BENCHMARK
+            if (ret != 0)
+                return ret;
+
+            if (!layer->support_cuda)
+            {
+                std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+                top_blob = CudaMat{top_blob_cpu, cuda_allocator};
+            }
+
+            // store top blob
+            blob_mats[top_blob_index] = top_blob;
+        }
+    }
+    else
+    {
+        // load bottom blobs
+        std::vector<CudaMat> bottom_blobs(layer->bottoms.size());
+        for (size_t i = 0; i < layer->bottoms.size(); i++)
+        {
+            int bottom_blob_index = layer->bottoms[i];
+
+            if (blob_mats[bottom_blob_index].dims == 0)
+            {
+                int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats, opt);
+                if (ret != 0)
+                    return ret;
+            }
+
+            bottom_blobs[i] = blob_mats[bottom_blob_index];
+
+            if (opt.lightmode)
+            {
+                // delete after taken in light mode
+                blob_mats[bottom_blob_index].release();
+                // deep copy for inplace forward if data is shared
+                if (layer->support_inplace && *bottom_blobs[i].refcount != 1)
+                {
+                    bottom_blobs[i] = bottom_blobs[i].clone();
+                }
+            }
+
+            if (opt.use_bf16_storage)
+            {
+                if (bottom_blobs[i].elembits() == 32 && layer->support_bf16_storage)
+                {
+                    CudaMat bottom_blob_bf16;
+                    cast_float32_to_bfloat16(bottom_blobs[i], bottom_blob_bf16, opt);
+                    bottom_blobs[i] = bottom_blob_bf16;
+                }
+                if (bottom_blobs[i].elembits() == 16 && !layer->support_bf16_storage)
+                {
+                    CudaMat bottom_blob_fp32;
+                    cast_bfloat16_to_float32(bottom_blobs[i], bottom_blob_fp32, opt);
+                    bottom_blobs[i] = bottom_blob_fp32;
+                }
+            }
+            // *INDENT-ON*
+            // clang-format on
+
+            if (opt.use_packing_layout)
+            {
+                // resolve dst_elempack
+                int dims = bottom_blobs[i].dims;
+                int elemcount = 0;
+                if (dims == 1) elemcount = bottom_blobs[i].elempack * bottom_blobs[i].w;
+                if (dims == 2) elemcount = bottom_blobs[i].elempack * bottom_blobs[i].h;
+                if (dims == 3) elemcount = bottom_blobs[i].elempack * bottom_blobs[i].c;
+
+                int dst_elempack = 1;
+                if (layer->support_packing)
+                {
+                    if (elemcount % 4 == 0)
+                        dst_elempack = 4;
+                }
+
+                CudaMat bottom_blob_packed;
+                convert_packing(bottom_blobs[i], bottom_blob_packed, dst_elempack, opt);
+                bottom_blobs[i] = bottom_blob_packed;
+            }
+        }
+
+        // forward
+        if (opt.lightmode && layer->support_inplace)
+        {
+            std::vector<CudaMat>& bottom_top_blobs = bottom_blobs;
+            std::vector<Mat> bottom_top_blobs_cpu;
+            if (!layer->support_cuda) {
+                cudaDeviceSynchronize();
+                for (size_t i=0; i<bottom_blobs.size(); i++) {
+                    bottom_top_blobs_cpu[i] = bottom_top_blobs[i];
+                }
+            }
+            int ret{-1};
+
+#if NCNN_BENCHMARK
+            double start = get_current_time();
+            if (!layer->support_cuda)
+            {
+                ret = layer->forward_inplace(bottom_top_blobs_cpu, opt);
+            }
+            else
+            {
+                ret = layer->forward_inplace(bottom_top_blobs, opt);
+            }
+            double end = get_current_time();
+            benchmark(layer, start, end);
+
+#else
+            if (!layer->support_cuda) {
+                ret = layer->forward_inplace(bottom_top_blobs_cpu, opt);
+            } else {
+                ret = layer->forward_inplace(bottom_top_blobs, opt);
+            }
+#endif // NCNN_BENCHMARK
+            if (ret != 0)
+                return ret;
+
+            if (!layer->support_cuda) {
+                std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+                for (size_t i=0; i<bottom_top_blobs_cpu.size(); i++) {
+                    bottom_top_blobs[i] = CudaMat{bottom_top_blobs_cpu[i], cuda_allocator};
+                }
+            }
+
+            // store top blobs
+            for (size_t i = 0; i < layer->tops.size(); i++)
+            {
+                int top_blob_index = layer->tops[i];
+
+                blob_mats[top_blob_index] = bottom_top_blobs[i];
+            }
+        }
+        else
+        {
+            std::vector<CudaMat> top_blobs(layer->tops.size());
+
+            std::vector<Mat> top_blobs_cpu(layer->tops.size());
+            std::vector<Mat> bottom_blobs_cpu(layer->bottoms.size());
+            if (!layer->support_cuda) {
+                cudaDeviceSynchronize();
+                for (size_t i=0; i<bottom_blobs.size(); i++) {
+                    bottom_blobs_cpu[i] = bottom_blobs[i];
+                }
+            }
+
+            int ret{-1};
+#if NCNN_BENCHMARK
+            double start = get_current_time();
+            if (!layer->support_cuda) {
+                ret = layer->forward(bottom_blobs_cpu, top_blobs_cpu, opt);
+            } else
+            {
+                ret = layer->forward(bottom_blobs, top_blobs, opt);
+            }
+            double end = get_current_time();
+            benchmark(layer, start, end);
+#else
+            if (!layer->support_cuda) {
+                ret = layer->forward(bottom_blobs_cpu, top_blobs_cpu, opt);
+            } else
+            {
+                ret = layer->forward(bottom_blobs, top_blobs, opt);
+            }
+#endif // NCNN_BENCHMARK
+            if (ret != 0)
+                return ret;
+
+            if (!layer->support_cuda)
+            {
+                std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+                for (size_t i = 0; i < top_blobs_cpu.size(); i++)
+                {
+                    top_blobs[i] = CudaMat{top_blobs_cpu[i], cuda_allocator};
+                }
+            }
+
+            // store top blobs
+            for (size_t i = 0; i < layer->tops.size(); i++)
+            {
+                int top_blob_index = layer->tops[i];
+
+                blob_mats[top_blob_index] = top_blobs[i];
+            }
+        }
+    }
+
+//         NCNN_LOGE("forward_layer %d %s done", layer_index, layer->name.c_str());
+//         const Mat& blob = blob_mats[layer->tops[0]];
+//         NCNN_LOGE("[%-2d %-16s %-16s]  %d    blobs count = %-3d   size = %-3d x %-3d", layer_index, layer->type.c_str(), layer->name.c_str(), layer->tops[0], blob.c, blob.h, blob.w);
+
+    return 0;
+}
+#endif
 
 #if NCNN_VULKAN
 int Net::forward_layer(int layer_index, std::vector<Mat>& blob_mats, std::vector<VkMat>& blob_mats_gpu, VkCompute& cmd, const Option& opt) const
@@ -2547,6 +2892,10 @@ Extractor::Extractor(const Net* _net, size_t blob_count)
     blob_mats.resize(blob_count);
     opt = net->opt;
 
+#if NCNN_CUDA
+    blob_mats_gpu.resize(blob_count);
+#endif
+
 #if NCNN_VULKAN
     if (net->opt.use_vulkan_compute)
     {
@@ -2802,6 +3151,75 @@ int Extractor::extract(int blob_index, Mat& feat, int type)
 
     return ret;
 }
+
+#if NCNN_CUDA
+#if NCNN_STRING
+int Extractor::input(const char* blob_name, const CudaMat& in)
+{
+    int blob_index = net->find_blob_index_by_name(blob_name);
+    if (blob_index == -1)
+        return -1;
+
+    return input(blob_index, in);
+}
+
+int Extractor::extract(const char* blob_name, CudaMat& feat, int type)
+{
+    int blob_index = net->find_blob_index_by_name(blob_name);
+    if (blob_index == -1)
+        return -1;
+
+    return extract(blob_index, feat, type);
+}
+#endif
+int Extractor::input(int blob_index, const CudaMat& in)
+{
+    if (blob_index < 0 || blob_index >= (int)blob_mats_gpu.size())
+        return -1;
+
+    blob_mats_gpu[blob_index] = in;
+
+    return 0;
+}
+
+int Extractor::extract(int blob_index, CudaMat& feat, int type)
+{
+    if (blob_index < 0 || blob_index >= (int)blob_mats_gpu.size())
+        return -1;
+
+    int ret = 0;
+
+    if (blob_mats_gpu[blob_index].dims == 0)
+    {
+        int layer_index = net->blobs[blob_index].producer;
+        ret = net->forward_layer(layer_index, blob_mats_gpu, opt);
+    }
+
+    feat = blob_mats_gpu[blob_index];
+
+    if (opt.use_packing_layout && (type == 0))
+    {
+        CudaMat bottom_blob_unpacked;
+        convert_packing(feat, bottom_blob_unpacked, 1, opt);
+        feat = bottom_blob_unpacked;
+    }
+
+    if (opt.use_bf16_storage && (type == 0))
+    {
+        if (feat.elembits() == 16)
+        {
+            CudaMat feat_fp32;
+            cast_bfloat16_to_float32(feat, feat_fp32, opt);
+            feat = feat_fp32;
+        }
+    }
+
+    cudaDeviceSynchronize();
+    checkCudaErrors(cudaGetLastError());
+
+    return ret;
+}
+#endif
 
 #if NCNN_VULKAN
 #if NCNN_STRING
