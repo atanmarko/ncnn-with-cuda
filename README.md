@@ -18,6 +18,7 @@ _Develop_ branch is used for active development. Development of new layers is pe
 
 ```
 git clone https://github.com/atanmarko/ncnn-with-cuda
+cd ncnn-with-cuda
 mkdir build
 cd build
 cmake -DNCNN_VULKAN=OFF -DNCNN_CUDA=ON -DLOG_LAYERS=OFF ..
