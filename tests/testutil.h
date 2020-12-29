@@ -360,6 +360,7 @@ int test_layer_cpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
 
     c.resize(top_blob_count);
 
+    std::chrono::high_resolution_clock::time_point begin, end;
     if (op->support_inplace)
     {
         for (size_t i = 0; i < a4.size(); i++)
@@ -367,12 +368,17 @@ int test_layer_cpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
             c[i] = a4[i].clone();
         }
 
+        begin = std::chrono::high_resolution_clock::now();
         op->forward_inplace(c, opt);
+        end = std::chrono::high_resolution_clock::now();
     }
     else
     {
+        begin = std::chrono::high_resolution_clock::now();
         op->forward(a4, c, opt);
+        end = std::chrono::high_resolution_clock::now();
     }
+    std::cout << "test_layer_cpu execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
 
     if (opt.use_fp16_storage)
     {
@@ -879,6 +885,7 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
 
     std::vector<ncnn::CudaMat> d_gpu(a.size());
 
+    std::chrono::high_resolution_clock::time_point begin, end;
     if (op->support_inplace)
     {
         for (size_t i = 0; i < a4.size(); i++)
@@ -886,12 +893,18 @@ int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
             d_gpu[i] = a_gpu[i].clone();
         }
 
+        begin = std::chrono::high_resolution_clock::now();
         op->forward_inplace(d_gpu, opt);
+        end = std::chrono::high_resolution_clock::now();
     }
     else
     {
+        begin = std::chrono::high_resolution_clock::now();
         op->forward(a_gpu, d_gpu, opt);
+        end = std::chrono::high_resolution_clock::now();
     }
+
+    std::cout << "test_layer_cuda execution time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
 
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());

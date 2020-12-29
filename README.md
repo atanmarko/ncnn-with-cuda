@@ -4,13 +4,15 @@ This project implements GPU _NVIDIA CUDA_ inference support for well known [Tenc
 
 ### Development Status
 
-Following layers have been currently implemented in CUDA: _AbsVal, BatchNorm, Bias, BinaryOp, BNLL, Convolution, ConvolutionDepthWise, Crop, Flatten, InnerProduct, Input, Packing, Padding, Quantize, ReLU, Reshape, Softmax, Split_.
+Following layers have been currently implemented in CUDA: _AbsVal, BatchNorm, Bias, BinaryOp, BNLL, Concat, Convolution, ConvolutionDepthWise, Crop, Flatten, InnerProduct, Input, Packing, Padding, Quantize, ReLU, Reshape, Softmax, Split_
 
-Next for development on TODO list: _Concat, Interp, Scale, Pooling, Yolov3DetectionOutput_
+Development plan for the near future:
+* Cuda implementation of layers _Pooling, Eltwise, HardSigmoid, HardSwish, Interp, Scale, Yolov3DetectionOutput_
+* Further optimization of existing CUDA layers (with the goal to beat Vulkan performance ;) )
 
-For usecases where some CUDA layer implementation is missing, CPU/GPU data ping-pong will slow the execution significantly. _RetinaFace_ face detection currently only misses _Concat_ and _Interp_ layers in order to be fully executable on GPU. 
+For usecases where some CUDA layer implementation is missing, CPU/GPU data ping-pong will slow the execution significantly.
 
-_Develop_ branch is used for active development. Development of new layers is performed on develop_<layer_name> branch. Occasionaly upstream updates and fixes would be added to the project.
+_Develop_ branch is used for active development. Development of new layers is performed on develop_<layer_name> branch which is squashed before merging to develop branch. Occasionaly upstream updates and fixes would be added to the project.
 
 ### Build and test
 
@@ -32,6 +34,19 @@ To run test for particular layer, where CPU vs CUDA implementation and execution
 cd build/tests
 ./test_<layer_name>
 ```
+
+#### Check which layers are not executed on CUDA
+
+Build project with turned on LOG_LAYERS config parameter:
+```
+cmake -DNCNN_VULKAN=OFF -DNCNN_CUDA=ON -DLOG_LAYERS=ON ..
+```
+Run the particular example or network benchmark and grep for non cuda layers:
+```
+./retinaface <path to image file> | grep forward | grep -v cuda
+```
+
+
 
 #### Run retinaface test program:
 
