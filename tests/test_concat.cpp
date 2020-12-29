@@ -159,12 +159,22 @@ static int test_concat_6()
     b[1] = RandomMat(8);
     b[2] = RandomMat(12);
 
+    std::vector<ncnn::Mat> c(3);
+    c[0] = RandomMat(127);
+    c[1] = RandomMat(481);
+    c[2] = RandomMat(1385);
+
+
     return 0
            || test_concat(a, 0)
            || test_concat(a, -1)
 
            || test_concat(b, 0)
-           || test_concat(b, -1);
+           || test_concat(b, -1)
+
+           || test_concat(c, 0)
+           || test_concat(c, -1)
+        ;
 }
 
 int main()
@@ -178,5 +188,6 @@ int main()
            || test_concat_3()
            || test_concat_4()
            || test_concat_5()
-           || test_concat_6();
+           || test_concat_6()
+        ;
 }
