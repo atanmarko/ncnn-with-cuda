@@ -443,8 +443,8 @@ int convolutiondepthwise_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_b
     if (bottom_blob_info.c == info.group && info.group == info.num_output)
     {
         const int number_of_threads = top_blob.w > info.maxk ? top_blob.w : info.maxk;
-        int thread_per_block_x = ((number_of_threads - 1) / 64 + 1) * 64;
-        if (thread_per_block_x > 128) thread_per_block_x = 128;
+        int thread_per_block_x = ((number_of_threads - 1) / 32 + 1) * 32;
+        if (thread_per_block_x > 64) thread_per_block_x = 64;
         int thread_per_block_y = ((top_blob.h - 1) / 8 + 1) * 8;
         if (thread_per_block_y > 8) thread_per_block_y = 8;
         const int thread_per_block_z = 1;
