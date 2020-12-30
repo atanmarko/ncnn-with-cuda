@@ -155,7 +155,7 @@ protected:
     int forward_layer(int layer_index, std::vector<Mat>& blob_mats, const Option& opt) const;
 
 #if NCNN_CUDA
-    int forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const Option& opt) const;
+    int forward_layer(int layer_index, std::vector<CudaMat>& blob_mats_gpu, const Option& opt) const;
 #endif
 
 

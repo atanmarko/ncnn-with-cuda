@@ -331,6 +331,7 @@ int main(int argc, char** argv)
 
 #if NCNN_CUDA
     if (gpu_device == -1) gpu_device = 0;
+    opt.use_cuda_compute = true;
 #endif
 
     fprintf(stderr, "loop_count = %d\n", g_loop_count);
