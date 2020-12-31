@@ -203,10 +203,12 @@ void benchmark_cuda(const char* comment, ncnn::Mat _in, const ncnn::Option& opt)
     ncnn::Mat out;
     ncnn::CudaMat in_gpu;
 
+    void* gpu_buffer = cuda_allocator->fastMalloc(_in.total() * _in.elemsize);
+
     // warm up
     for (int i = 0; i < g_warmup_loop_count; i++)
     {
-        in_gpu = ncnn::CudaMat{_in, cuda_allocator}; //include cpu->gpu and vice versa copy time to benchmark
+        in_gpu = ncnn::CudaMat{_in, cuda_allocator, gpu_buffer}; //include cpu->gpu and vice versa copy time to benchmark
         ncnn::Extractor ex = net.create_extractor();
         ex.input("data", in_gpu);
         ex.extract("output", out_gpu);
@@ -222,7 +224,7 @@ void benchmark_cuda(const char* comment, ncnn::Mat _in, const ncnn::Option& opt)
         double start = ncnn::get_current_time();
 
         {
-            in_gpu = ncnn::CudaMat{_in, cuda_allocator};
+            in_gpu = ncnn::CudaMat{_in, cuda_allocator, gpu_buffer};
             ncnn::Extractor ex = net.create_extractor();
             ex.input("data", in_gpu);
             ex.extract("output", out_gpu);

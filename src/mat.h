@@ -332,7 +332,7 @@ public:
     // packed dim
     CudaMat(int w, int h, int c, size_t elemsize, int elempack, std::shared_ptr<CudaAllocator> allocator = 0);
     // copy from host
-    CudaMat(const Mat& m, std::shared_ptr<ncnn::CudaAllocator> _allocator);
+    CudaMat(const Mat& m, std::shared_ptr<ncnn::CudaAllocator> _allocator, void* gpu_data_buffer = nullptr);
     // copy from device
     CudaMat(const CudaMat& m);
     // external vec
@@ -508,6 +508,10 @@ public:
 
     // pointer to the data on device
     void* data{nullptr};
+
+    //If external buffer has been passed to matrix,
+    // should not be freed
+    bool external_buffer{false};
 
     // pointer to the reference counter
     // when points to user-allocated data, the pointer is NULL
@@ -2602,7 +2606,7 @@ std::shared_ptr<T> CudaMat::copy_gpu_data() const
 }
 
 // copy from host
-inline CudaMat::CudaMat(const Mat& m, std::shared_ptr<ncnn::CudaAllocator> _allocator)
+inline CudaMat::CudaMat(const Mat& m, std::shared_ptr<ncnn::CudaAllocator> _allocator, void* gpu_data_buffer)
     : refcount(0), elemsize(m.elemsize), elempack(m.elempack), dims(m.dims), w(m.w), h(m.h), c(m.c), cstep(m.cstep)
 {
     assert(_allocator.use_count() > 0);
@@ -2612,7 +2616,16 @@ inline CudaMat::CudaMat(const Mat& m, std::shared_ptr<ncnn::CudaAllocator> _allo
     if (total() > 0)
     {
         size_t totalsize = alignSize(total() * elemsize, 4);
-        data = allocator->fastMalloc(totalsize);
+        if (gpu_data_buffer != nullptr)
+        {
+            external_buffer = true;
+            data = gpu_data_buffer;
+        }
+        else
+        {
+            external_buffer = false;
+            data = allocator->fastMalloc(totalsize);
+        }
 
         checkCudaErrors(cudaMemcpy(data, m.data, total() * elemsize, cudaMemcpyHostToDevice));
 
@@ -2664,7 +2677,7 @@ inline const CudaMat CudaMat::channel_range(int _c, int channels) const
 
 inline void CudaMat::release()
 {
-    if (refcount && NCNN_XADD(refcount.get(), -1) == 1)
+    if ((!external_buffer) && refcount && NCNN_XADD(refcount.get(), -1) == 1)
     {
         allocator->fastFree(data);
     }
