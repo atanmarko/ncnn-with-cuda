@@ -1403,7 +1403,7 @@ int Net::forward_layer(int layer_index, std::vector<Mat>& blob_mats, const Optio
 }
 
 #if NCNN_CUDA
-int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const Option& opt) const
+int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats_gpu, const Option& opt) const
 {
     const Layer* layer = layers[layer_index];
 
@@ -1415,39 +1415,39 @@ int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const O
         int bottom_blob_index = layer->bottoms[0];
         int top_blob_index = layer->tops[0];
 
-        if (blob_mats[bottom_blob_index].dims == 0)
+        if (blob_mats_gpu[bottom_blob_index].dims == 0)
         {
-            int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats, opt);
+            int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats_gpu, opt);
             if (ret != 0)
                 return ret;
         }
 
-        CudaMat bottom_blob = blob_mats[bottom_blob_index];
+        CudaMat bottom_blob_gpu = blob_mats_gpu[bottom_blob_index];
 
         if (opt.lightmode)
         {
             // delete after taken in light mode
-            blob_mats[bottom_blob_index].release();
+            blob_mats_gpu[bottom_blob_index].release();
             // deep copy for inplace forward if data is shared
-            if (layer->support_inplace && *bottom_blob.refcount != 1)
+            if (layer->support_inplace && *bottom_blob_gpu.refcount != 1)
             {
-                bottom_blob = bottom_blob.clone();
+                bottom_blob_gpu = bottom_blob_gpu.clone();
             }
         }
 
         if (opt.use_bf16_storage)
         {
-            if (bottom_blob.elembits() == 32 && layer->support_bf16_storage)
+            if (bottom_blob_gpu.elembits() == 32 && layer->support_bf16_storage)
             {
                 CudaMat bottom_blob_bf16;
-                cast_float32_to_bfloat16(bottom_blob, bottom_blob_bf16, opt);
-                bottom_blob = bottom_blob_bf16;
+                cast_float32_to_bfloat16(bottom_blob_gpu, bottom_blob_bf16, opt);
+                bottom_blob_gpu = bottom_blob_bf16;
             }
-            if (bottom_blob.elembits() == 16 && !layer->support_bf16_storage)
+            if (bottom_blob_gpu.elembits() == 16 && !layer->support_bf16_storage)
             {
                 CudaMat bottom_blob_fp32;
-                cast_bfloat16_to_float32(bottom_blob, bottom_blob_fp32, opt);
-                bottom_blob = bottom_blob_fp32;
+                cast_bfloat16_to_float32(bottom_blob_gpu, bottom_blob_fp32, opt);
+                bottom_blob_gpu = bottom_blob_fp32;
             }
         }
         // *INDENT-ON*
@@ -1456,11 +1456,11 @@ int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const O
         if (opt.use_packing_layout)
         {
             // resolve dst_elempack
-            int dims = bottom_blob.dims;
+            int dims = bottom_blob_gpu.dims;
             int elemcount = 0;
-            if (dims == 1) elemcount = bottom_blob.elempack * bottom_blob.w;
-            if (dims == 2) elemcount = bottom_blob.elempack * bottom_blob.h;
-            if (dims == 3) elemcount = bottom_blob.elempack * bottom_blob.c;
+            if (dims == 1) elemcount = bottom_blob_gpu.elempack * bottom_blob_gpu.w;
+            if (dims == 2) elemcount = bottom_blob_gpu.elempack * bottom_blob_gpu.h;
+            if (dims == 3) elemcount = bottom_blob_gpu.elempack * bottom_blob_gpu.c;
 
             int dst_elempack = 1;
             if (layer->support_packing)
@@ -1470,14 +1470,14 @@ int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const O
             }
 
             CudaMat bottom_blob_packed;
-            convert_packing(bottom_blob, bottom_blob_packed, dst_elempack, opt);
-            bottom_blob = bottom_blob_packed;
+            convert_packing(bottom_blob_gpu, bottom_blob_packed, dst_elempack, opt);
+            bottom_blob_gpu = bottom_blob_packed;
         }
 
         // forward
         if (opt.lightmode && layer->support_inplace)
         {
-            CudaMat& bottom_top_blob = bottom_blob;
+            CudaMat& bottom_top_blob = bottom_blob_gpu;
 
             Mat bottom_top_blob_cpu;
             if (!layer->support_cuda)
@@ -1515,18 +1515,18 @@ int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const O
             }
 
             // store top blob
-            blob_mats[top_blob_index] = bottom_top_blob;
+            blob_mats_gpu[top_blob_index] = bottom_top_blob;
         }
         else
         {
-            CudaMat top_blob;
+            CudaMat top_blob_gpu;
 
             Mat top_blob_cpu;
             Mat bottom_blob_cpu;
             if (!layer->support_cuda)
             {
                 cudaDeviceSynchronize();
-                bottom_blob_cpu = bottom_blob;
+                bottom_blob_cpu = bottom_blob_gpu;
             }
             int ret{-1};
 #if NCNN_BENCHMARK
@@ -1548,7 +1548,7 @@ int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const O
             {
                 ret = layer->forward(bottom_blob_cpu, top_blob_cpu, opt);
             } else {
-                ret = layer->forward(bottom_blob, top_blob, opt);
+                ret = layer->forward(bottom_blob_gpu, top_blob_gpu, opt);
             }
 #endif // NCNN_BENCHMARK
             if (ret != 0)
@@ -1557,54 +1557,54 @@ int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const O
             if (!layer->support_cuda)
             {
                 std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-                top_blob = CudaMat{top_blob_cpu, cuda_allocator};
+                top_blob_gpu = CudaMat{top_blob_cpu, cuda_allocator};
             }
 
             // store top blob
-            blob_mats[top_blob_index] = top_blob;
+            blob_mats_gpu[top_blob_index] = top_blob_gpu;
         }
     }
     else
     {
         // load bottom blobs
-        std::vector<CudaMat> bottom_blobs(layer->bottoms.size());
+        std::vector<CudaMat> bottom_blobs_gpu(layer->bottoms.size());
         for (size_t i = 0; i < layer->bottoms.size(); i++)
         {
             int bottom_blob_index = layer->bottoms[i];
 
-            if (blob_mats[bottom_blob_index].dims == 0)
+            if (blob_mats_gpu[bottom_blob_index].dims == 0)
             {
-                int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats, opt);
+                int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats_gpu, opt);
                 if (ret != 0)
                     return ret;
             }
 
-            bottom_blobs[i] = blob_mats[bottom_blob_index];
+            bottom_blobs_gpu[i] = blob_mats_gpu[bottom_blob_index];
 
             if (opt.lightmode)
             {
                 // delete after taken in light mode
-                blob_mats[bottom_blob_index].release();
+                blob_mats_gpu[bottom_blob_index].release();
                 // deep copy for inplace forward if data is shared
-                if (layer->support_inplace && *bottom_blobs[i].refcount != 1)
+                if (layer->support_inplace && *bottom_blobs_gpu[i].refcount != 1)
                 {
-                    bottom_blobs[i] = bottom_blobs[i].clone();
+                    bottom_blobs_gpu[i] = bottom_blobs_gpu[i].clone();
                 }
             }
 
             if (opt.use_bf16_storage)
             {
-                if (bottom_blobs[i].elembits() == 32 && layer->support_bf16_storage)
+                if (bottom_blobs_gpu[i].elembits() == 32 && layer->support_bf16_storage)
                 {
                     CudaMat bottom_blob_bf16;
-                    cast_float32_to_bfloat16(bottom_blobs[i], bottom_blob_bf16, opt);
-                    bottom_blobs[i] = bottom_blob_bf16;
+                    cast_float32_to_bfloat16(bottom_blobs_gpu[i], bottom_blob_bf16, opt);
+                    bottom_blobs_gpu[i] = bottom_blob_bf16;
                 }
-                if (bottom_blobs[i].elembits() == 16 && !layer->support_bf16_storage)
+                if (bottom_blobs_gpu[i].elembits() == 16 && !layer->support_bf16_storage)
                 {
                     CudaMat bottom_blob_fp32;
-                    cast_bfloat16_to_float32(bottom_blobs[i], bottom_blob_fp32, opt);
-                    bottom_blobs[i] = bottom_blob_fp32;
+                    cast_bfloat16_to_float32(bottom_blobs_gpu[i], bottom_blob_fp32, opt);
+                    bottom_blobs_gpu[i] = bottom_blob_fp32;
                 }
             }
             // *INDENT-ON*
@@ -1613,11 +1613,11 @@ int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const O
             if (opt.use_packing_layout)
             {
                 // resolve dst_elempack
-                int dims = bottom_blobs[i].dims;
+                int dims = bottom_blobs_gpu[i].dims;
                 int elemcount = 0;
-                if (dims == 1) elemcount = bottom_blobs[i].elempack * bottom_blobs[i].w;
-                if (dims == 2) elemcount = bottom_blobs[i].elempack * bottom_blobs[i].h;
-                if (dims == 3) elemcount = bottom_blobs[i].elempack * bottom_blobs[i].c;
+                if (dims == 1) elemcount = bottom_blobs_gpu[i].elempack * bottom_blobs_gpu[i].w;
+                if (dims == 2) elemcount = bottom_blobs_gpu[i].elempack * bottom_blobs_gpu[i].h;
+                if (dims == 3) elemcount = bottom_blobs_gpu[i].elempack * bottom_blobs_gpu[i].c;
 
                 int dst_elempack = 1;
                 if (layer->support_packing)
@@ -1627,19 +1627,19 @@ int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const O
                 }
 
                 CudaMat bottom_blob_packed;
-                convert_packing(bottom_blobs[i], bottom_blob_packed, dst_elempack, opt);
-                bottom_blobs[i] = bottom_blob_packed;
+                convert_packing(bottom_blobs_gpu[i], bottom_blob_packed, dst_elempack, opt);
+                bottom_blobs_gpu[i] = bottom_blob_packed;
             }
         }
 
         // forward
         if (opt.lightmode && layer->support_inplace)
         {
-            std::vector<CudaMat>& bottom_top_blobs = bottom_blobs;
+            std::vector<CudaMat>& bottom_top_blobs = bottom_blobs_gpu;
             std::vector<Mat> bottom_top_blobs_cpu;
             if (!layer->support_cuda) {
                 cudaDeviceSynchronize();
-                for (size_t i=0; i<bottom_blobs.size(); i++) {
+                for (size_t i=0; i< bottom_blobs_gpu.size(); i++) {
                     bottom_top_blobs_cpu[i] = bottom_top_blobs[i];
                 }
             }
@@ -1680,7 +1680,7 @@ int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const O
             {
                 int top_blob_index = layer->tops[i];
 
-                blob_mats[top_blob_index] = bottom_top_blobs[i];
+                blob_mats_gpu[top_blob_index] = bottom_top_blobs[i];
             }
         }
         else
@@ -1691,8 +1691,8 @@ int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const O
             std::vector<Mat> bottom_blobs_cpu(layer->bottoms.size());
             if (!layer->support_cuda) {
                 cudaDeviceSynchronize();
-                for (size_t i=0; i<bottom_blobs.size(); i++) {
-                    bottom_blobs_cpu[i] = bottom_blobs[i];
+                for (size_t i=0; i< bottom_blobs_gpu.size(); i++) {
+                    bottom_blobs_cpu[i] = bottom_blobs_gpu[i];
                 }
             }
 
@@ -1712,7 +1712,7 @@ int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const O
                 ret = layer->forward(bottom_blobs_cpu, top_blobs_cpu, opt);
             } else
             {
-                ret = layer->forward(bottom_blobs, top_blobs, opt);
+                ret = layer->forward(bottom_blobs_gpu, top_blobs, opt);
             }
 #endif // NCNN_BENCHMARK
             if (ret != 0)
@@ -1732,7 +1732,7 @@ int Net::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const O
             {
                 int top_blob_index = layer->tops[i];
 
-                blob_mats[top_blob_index] = top_blobs[i];
+                blob_mats_gpu[top_blob_index] = top_blobs[i];
             }
         }
     }
@@ -2911,6 +2911,10 @@ Extractor::Extractor(const Net* _net, size_t blob_count)
 Extractor::~Extractor()
 {
     blob_mats.clear();
+
+#if NCNN_CUDA
+    blob_mats_gpu.clear();
+#endif
 
 #if NCNN_VULKAN
     if (net->opt.use_vulkan_compute)

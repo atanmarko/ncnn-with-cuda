@@ -57,6 +57,28 @@ cd build/examples
 ./retinaface <path_to_picture_file>
 ```
 
+Benchmark Retinaface:
+
+Copy _mnet.25-opt.bin_ and _mnet.25-opt.param_  files to the build/benchmark directory.
+
+```
+cd build/benchmark
+./retinaface-benchmark <path_to_picture_file>
+```
+It will run 10 loops of Retinaface face detection and print inference timing results. Retinaface stride 32 has all the layers implemented in CUDA.
+
+| | Image Size | Stride | CPU av. time (us) | Vulkan av. time (us) | CUDA av. time (us)
+------------ | ------------- |  ------------- |  ------------- | -------------  | -------------
+ i7-4790, GTX 1060  | 640x480 | 32 | 28.90 | 33.20  | 31.10
+ i7-4790, GTX 1060  | 1280x720 | 32 | 92.70 | 96.90  | 54.00
+ i7-4790, GTX 1060  | 1920x1080 | 32 |  167.50 | 204.50  | 91.70
+ Jetson AGX Xavier  | 640x480 | 32 | 373.20 | 402.10  | 343.60
+ Jetson AGX Xavier  | 1280x720 | 32 | 508.30 | 738.40  | 327.60
+ Jetson AGX Xavier  | 1920x1080 | 32 |  812.00 | 934.70  | 436.70
+ 
+
+
+
 ### License
 
 NCNN CUDA implementation:

@@ -314,7 +314,7 @@ int copy_make_border_image(const CudaMat& src, CudaMat& dst, int top, int left, 
     int thread_per_block_y = output_info.h;
     if (thread_per_block_y > 8) thread_per_block_y = 8;
     int thread_per_block_z = output_info.c;
-    if (thread_per_block_z > 4) thread_per_block_z = 4;
+    if (thread_per_block_z > 1) thread_per_block_z = 1;
     const int total_number_of_columns = output_info.w;
     const int total_number_of_rows = output_info.h;
     const int total_number_of_channels = output_info.c;
@@ -429,7 +429,7 @@ int copy_make_border_image_3d(const CudaMat& src, CudaMat& dst, int front, int t
     int thread_per_block_y = output_info.h;
     if (thread_per_block_y > 8) thread_per_block_y = 8;
     int thread_per_block_z = output_info.c;
-    if (thread_per_block_z > 4) thread_per_block_z = 4;
+    if (thread_per_block_z > 1) thread_per_block_z = 1;
     const int total_number_of_columns = output_info.w;
     const int total_number_of_rows = output_info.h;
     const int total_number_of_channels = output_info.c;
