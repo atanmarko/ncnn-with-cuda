@@ -7,7 +7,8 @@ This project implements GPU _NVIDIA CUDA_ inference support for well known [Tenc
 Following layers have been currently implemented in CUDA: _AbsVal, BatchNorm, Bias, BinaryOp, BNLL, Concat, Convolution, ConvolutionDepthWise, Crop, Flatten, InnerProduct, Input, Packing, Padding, Quantize, ReLU, Reshape, Softmax, Split_
 
 Development plan for the near future:
-* Cuda implementation of layers _Pooling, Eltwise, HardSigmoid, HardSwish, Interp, Scale, Yolov3DetectionOutput_
+* Cuda implementation of layers _Pooling, Eltwise, HardSigmoid, HardSwish, Interp, Scale, Yolov3DetectionOutput_ 
+* Implementation of the more optimal allocation for cuda memory (cuda allocator with preallocated pool)
 * Further optimization of existing CUDA layers (with the goal to beat Vulkan performance ;) )
 
 For usecases where some CUDA layer implementation is missing, CPU/GPU data ping-pong will slow the execution significantly.
