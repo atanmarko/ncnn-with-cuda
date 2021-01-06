@@ -3046,6 +3046,25 @@ inline int CudaMat::elembits() const
     return elempack ? static_cast<int>(elemsize * 8) / elempack : 0;
 }
 
+inline void CudaMat::fill(float _v)
+{
+    int size = (int)total();
+    float *gpu_data = (float*)data;
+    float* cpu_data = static_cast<float*>(malloc(size*sizeof(float)));
+
+    for (int i=0; i<size; ++i)
+        cpu_data[i] = _v;
+
+    checkCudaErrors(cudaMemcpy(gpu_data, cpu_data, size*sizeof(float), cudaMemcpyHostToDevice));
+    free(cpu_data);
+}
+
+inline void CudaMat::fill(int _v)
+{
+    int size = (int)total();
+    checkCudaErrors(cudaMemset((int*)data, _v, size));
+}
+
 #endif
 
 } // namespace ncnn

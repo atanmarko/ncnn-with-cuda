@@ -240,6 +240,7 @@ if(NCNN_VULKAN)
 endif()
 
 if(NCNN_CUDA)
+    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_50)
     if(CMAKE_BUILD_TYPE MATCHES Debug)
         set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --debug --device-debug -O0 )  #For CUDA debugging
     endif()

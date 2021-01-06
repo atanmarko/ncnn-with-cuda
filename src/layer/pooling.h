@@ -26,6 +26,8 @@ public:
 
     virtual int load_param(const ParamDict& pd);
 
+    using Layer::forward;
+
     virtual int forward(const Mat& bottom_blob, Mat& top_blob, const Option& opt) const;
 
     enum PoolMethod
