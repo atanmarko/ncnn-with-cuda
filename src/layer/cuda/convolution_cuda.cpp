@@ -24,6 +24,7 @@
 namespace ncnn {
 
 int convolution_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Convolution_cuda::Convolution_info& info);
+int convolution_cuda_forward_03(const CudaMat& bottom_blob, CudaMat& top_blob, const Convolution_cuda::Convolution_info& info);
 int convolution_cuda_forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const Convolution_cuda::Convolution_info& info);
 
 Convolution_cuda::Convolution_cuda()
@@ -253,6 +254,7 @@ int Convolution_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, con
     int *gpu_space_ofs = static_cast<int*>(opt.blob_cuda_allocator->fastMalloc(_space_ofs.size() * sizeof(int)));
     checkCudaErrors(cudaMemcpy(gpu_space_ofs, _space_ofs.data(), _space_ofs.size() * sizeof(int), cudaMemcpyHostToDevice));
 
+//    int result = convolution_cuda_forward_03(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs));
     int result = convolution_cuda_forward(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs));
 
     opt.blob_cuda_allocator->fastFree(gpu_space_ofs);

@@ -78,7 +78,7 @@ static int test_convolution_0()
         const int p = kdsp[i][3];
 
         int ret = 0
-                  || test_convolution(9, 7, 1, 1, k, d, s, p, 1)
+                 || test_convolution(9, 7, 1, 1, k, d, s, p, 1)
                   || test_convolution(9, 7, 4, 13, k, d, s, p, 0)
                   || test_convolution(9, 7, 13, 4, k, d, s, p, 1)
                   || test_convolution(9, 7, 12, 12, k, d, s, p, 0)
@@ -88,7 +88,7 @@ static int test_convolution_0()
                   || test_convolution(9, 7, 12, 16, k, d, s, p, 0)
                   || test_convolution(9, 7, 15, 15, k, d, s, p, 0)
                   || test_convolution(9, 7, 16, 16, k, d, s, p, 0)
-                  || test_convolution(18, 17, 1, 1, k, d, s, p, 1)
+                 || test_convolution(18, 17, 1, 1, k, d, s, p, 1)
                   || test_convolution(18, 17, 4, 13, k, d, s, p, 0)
                   || test_convolution(18, 17, 13, 4, k, d, s, p, 1)
                   || test_convolution(18, 17, 12, 12, k, d, s, p, 0)
@@ -107,7 +107,8 @@ static int test_convolution_0()
                   || test_convolution(25, 33, 13, 8, k, d, s, p, 1)
                   || test_convolution(25, 33, 12, 16, k, d, s, p, 0)
                   || test_convolution(25, 33, 15, 15, k, d, s, p, 0)
-                  || test_convolution(25, 33, 16, 16, k, d, s, p, 0);
+                  || test_convolution(25, 33, 16, 16, k, d, s, p, 0)
+            ;
 
         if (ret != 0)
             return -1;
