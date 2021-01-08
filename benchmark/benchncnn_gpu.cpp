@@ -55,9 +55,10 @@ static bool g_enable_cooling_down = true;
 static ncnn::UnlockedPoolAllocator g_blob_pool_allocator;
 static ncnn::PoolAllocator g_workspace_pool_allocator;
 
+#if NCNN_CUDA
 static ncnn::CudaUnlockedPoolAllocator* g_cuda_blob_pool_allocator = new ncnn::CudaUnlockedPoolAllocator{ncnn::get_current_gpu_device()};
 static ncnn::CudaPoolAllocator* g_cuda_workspace_pool_allocator = new ncnn::CudaPoolAllocator{ncnn::get_current_gpu_device()};
-
+#endif
 
 #if NCNN_VULKAN
 static ncnn::VulkanDevice* g_vkdev = 0;
