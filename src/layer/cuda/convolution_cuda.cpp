@@ -284,6 +284,7 @@ int Convolution_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob
     {
         Option opt_g = opt;
         opt_g.blob_allocator = opt.workspace_allocator;
+        opt_g.blob_cuda_allocator = opt.blob_cuda_allocator;
 
         quantize_float32_to_int8(bottom_blob, bottom_blob_unbordered, bottom_blob_int8_scale, opt_g);
     }
