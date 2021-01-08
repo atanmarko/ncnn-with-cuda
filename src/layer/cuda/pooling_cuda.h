@@ -35,7 +35,7 @@ public:
     virtual int forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const;
 
     struct Pooling_info {
-        Pooling_info(const Pooling_cuda& poolingCuda, const std::vector<int>& _space_ofs)
+        Pooling_info(const Pooling_cuda& poolingCuda, const std::vector<int>& _space_ofs, const Option& opt)
             : pooling_type{poolingCuda.pooling_type},
               kernel_w{poolingCuda.kernel_w},
               kernel_h{poolingCuda.kernel_h},
@@ -55,12 +55,10 @@ public:
 
             if (!_space_ofs.empty())
             {
-                std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-                auto deleter = [](int* pointer) {
-                    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-                    cuda_allocator->fastFree(pointer);
+                auto deleter = [opt](int* pointer) {
+                    opt.blob_cuda_allocator->fastFree(pointer);
                 };
-                gpu_space_ofs = std::shared_ptr<int>(static_cast<int*>(cuda_allocator->fastMalloc(_space_ofs.size() * sizeof(int))), deleter);
+                gpu_space_ofs = std::shared_ptr<int>(static_cast<int*>(opt.blob_cuda_allocator->fastMalloc(_space_ofs.size() * sizeof(int))), deleter);
                 checkCudaErrors(cudaMemcpy(gpu_space_ofs.get(), _space_ofs.data(), _space_ofs.size() * sizeof(int), cudaMemcpyHostToDevice));
             }
 

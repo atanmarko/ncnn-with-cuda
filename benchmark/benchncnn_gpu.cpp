@@ -1,6 +1,7 @@
 ﻿// Tencent is pleased to support the open source community by making ncnn available.
 //
 // Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
+// Modifications Copyright (C) 2020 TANCOM SOFTWARE SOLUTIONS Ltd. All rights reserved.
 //
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
@@ -53,6 +54,10 @@ static bool g_enable_cooling_down = true;
 
 static ncnn::UnlockedPoolAllocator g_blob_pool_allocator;
 static ncnn::PoolAllocator g_workspace_pool_allocator;
+
+static ncnn::CudaUnlockedPoolAllocator* g_cuda_blob_pool_allocator = new ncnn::CudaUnlockedPoolAllocator{ncnn::get_current_gpu_device()};
+static ncnn::CudaPoolAllocator* g_cuda_workspace_pool_allocator = new ncnn::CudaPoolAllocator{ncnn::get_current_gpu_device()};
+
 
 #if NCNN_VULKAN
 static ncnn::VulkanDevice* g_vkdev = 0;
@@ -165,6 +170,9 @@ void benchmark_cuda(const char* comment, ncnn::Mat _in, const ncnn::Option& opt)
     g_blob_pool_allocator.clear();
     g_workspace_pool_allocator.clear();
 
+    g_cuda_blob_pool_allocator->clear();
+    g_cuda_workspace_pool_allocator->clear();
+
     ncnn::Net net;
 
     net.opt = opt;
@@ -221,17 +229,20 @@ void benchmark_cuda(const char* comment, ncnn::Mat _in, const ncnn::Option& opt)
 
     for (int i = 0; i < g_loop_count; i++)
     {
-        double start = ncnn::get_current_time();
 
-        {
+        double start, end;
+  //      std::cout << "Begin" << std::endl;
+        start = ncnn::get_current_time();
+            {
             in_gpu = ncnn::CudaMat{_in, cuda_allocator, gpu_buffer};
             ncnn::Extractor ex = net.create_extractor();
             ex.input("data", in_gpu);
             ex.extract("output", out_gpu);
             out = out_gpu;
-        }
 
-        double end = ncnn::get_current_time();
+        }
+        end = ncnn::get_current_time();
+      //  std::cout << "END" << std::endl;
 
         double time = end - start;
 
@@ -334,8 +345,11 @@ int main(int argc, char** argv)
 #if NCNN_CUDA
     if (gpu_device == -1) gpu_device = 0;
     opt.use_cuda_compute = true;
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    opt.blob_cuda_allocator = cuda_allocator;
+
+    g_cuda_blob_pool_allocator->set_size_compare_ratio(0.0f);
+    g_cuda_workspace_pool_allocator->set_size_compare_ratio(0.5f);
+    opt.blob_cuda_allocator = std::shared_ptr<ncnn::CudaAllocator>(g_cuda_blob_pool_allocator);
+    opt.workspace_cuda_allocator = std::shared_ptr<ncnn::CudaAllocator>(g_cuda_workspace_pool_allocator);
 #endif
 
     fprintf(stderr, "loop_count = %d\n", g_loop_count);
@@ -346,127 +360,17 @@ int main(int argc, char** argv)
 
 #if NCNN_CUDA
         // run cuda gpu benchmarks
-    benchmark_cuda("squeezenet", ncnn::Mat(227, 227, 3), opt);
+    benchmark_cuda("mobilenet", ncnn::Mat(640, 480, 3), opt);
+    benchmark_cuda("mobilenet", ncnn::Mat(1280, 720, 3), opt);
+    benchmark_cuda("mobilenet", ncnn::Mat(1920, 1080, 3), opt);
 
-    benchmark_cuda("squeezenet_int8", ncnn::Mat(227, 227, 3), opt);
-
-    benchmark_cuda("mobilenet", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("mobilenet_int8", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("mobilenet_v2", ncnn::Mat(224, 224, 3), opt);
-
-    // benchmark("mobilenet_v2_int8", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("mobilenet_v3", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("shufflenet", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("shufflenet_v2", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("mnasnet", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("proxylessnasnet", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("efficientnet_b0", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("regnety_400m", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("blazeface", ncnn::Mat(128, 128, 3), opt);
-
-    benchmark_cuda("googlenet", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("googlenet_int8", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("resnet18", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("resnet18_int8", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("alexnet", ncnn::Mat(227, 227, 3), opt);
-
-    benchmark_cuda("vgg16", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("vgg16_int8", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("resnet50", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("resnet50_int8", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark_cuda("squeezenet_ssd", ncnn::Mat(300, 300, 3), opt);
-
-    benchmark_cuda("squeezenet_ssd_int8", ncnn::Mat(300, 300, 3), opt);
-
-    benchmark_cuda("mobilenet_ssd", ncnn::Mat(300, 300, 3), opt);
-
-    benchmark_cuda("mobilenet_ssd_int8", ncnn::Mat(300, 300, 3), opt);
-
-    benchmark_cuda("mobilenet_yolo", ncnn::Mat(416, 416, 3), opt);
-
-    benchmark_cuda("mobilenetv2_yolov3", ncnn::Mat(352, 352, 3), opt);
-
-    benchmark_cuda("yolov4-tiny", ncnn::Mat(416, 416, 3), opt);
 #else
 
     // run
-    benchmark("squeezenet", ncnn::Mat(227, 227, 3), opt);
+    benchmark("mobilenet", ncnn::Mat(640, 480, 3), opt);
+    benchmark("mobilenet", ncnn::Mat(1280, 720, 3), opt);
+    benchmark("mobilenet", ncnn::Mat(1920, 1080, 3), opt);
 
-    benchmark("squeezenet_int8", ncnn::Mat(227, 227, 3), opt);
-
-    benchmark("mobilenet", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("mobilenet_int8", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("mobilenet_v2", ncnn::Mat(224, 224, 3), opt);
-
-    // benchmark("mobilenet_v2_int8", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("mobilenet_v3", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("shufflenet", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("shufflenet_v2", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("mnasnet", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("proxylessnasnet", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("efficientnet_b0", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("regnety_400m", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("blazeface", ncnn::Mat(128, 128, 3), opt);
-
-    benchmark("googlenet", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("googlenet_int8", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("resnet18", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("resnet18_int8", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("alexnet", ncnn::Mat(227, 227, 3), opt);
-
-    benchmark("vgg16", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("vgg16_int8", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("resnet50", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("resnet50_int8", ncnn::Mat(224, 224, 3), opt);
-
-    benchmark("squeezenet_ssd", ncnn::Mat(300, 300, 3), opt);
-
-    benchmark("squeezenet_ssd_int8", ncnn::Mat(300, 300, 3), opt);
-
-    benchmark("mobilenet_ssd", ncnn::Mat(300, 300, 3), opt);
-
-    benchmark("mobilenet_ssd_int8", ncnn::Mat(300, 300, 3), opt);
-
-    benchmark("mobilenet_yolo", ncnn::Mat(416, 416, 3), opt);
-
-    benchmark("mobilenetv2_yolov3", ncnn::Mat(352, 352, 3), opt);
-
-    benchmark("yolov4-tiny", ncnn::Mat(416, 416, 3), opt);
 #endif
 
 #if NCNN_VULKAN

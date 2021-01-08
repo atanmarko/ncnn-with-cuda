@@ -22,7 +22,7 @@
 
 namespace ncnn {
 
-int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Packing_cuda::packing_options options);
+int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Packing_cuda::packing_options options, const Option& opt);
 
 Packing_cuda::Packing_cuda()
 {
@@ -38,14 +38,15 @@ int Packing_cuda::load_param(const ParamDict& pd)
 }
 
 
-int Packing_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option&) const
+int Packing_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
 {
 #if LOG_LAYERS
     LOGL("Packing_cuda forward");
 #endif
     return packing_cuda_forward(bottom_blob,
                                 top_blob,
-                                Packing_cuda::packing_options{*this});
+                                Packing_cuda::packing_options{*this},
+                                opt);
 }
 
 

@@ -22,7 +22,7 @@
 
 namespace ncnn {
 
-int reshape_cuda_forward(const ncnn::CudaMat& bottom_blob, ncnn::CudaMat& top_blob, const int outw, const int outh, const int outc, bool need_permute, int ndim);
+int reshape_cuda_forward(const ncnn::CudaMat& bottom_blob, ncnn::CudaMat& top_blob, const int outw, const int outh, const int outc, bool need_permute, int ndim, const Option& opt);
 
 
 Reshape_cuda::Reshape_cuda()
@@ -30,7 +30,7 @@ Reshape_cuda::Reshape_cuda()
     support_cuda = true;
 }
 
-int Reshape_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option&) const
+int Reshape_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
 {
 #if LOG_LAYERS
     LOGL("Reshape_cuda forward");
@@ -108,7 +108,7 @@ int Reshape_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const O
         need_permute = false;
 
 
-    return reshape_cuda_forward(bottom_blob, top_blob, outw, outh, outc, need_permute, ndim);
+    return reshape_cuda_forward(bottom_blob, top_blob, outw, outh, outc, need_permute, ndim, opt);
 
 
 

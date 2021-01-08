@@ -126,10 +126,9 @@ __global__ void gpu_reshape_forward_need_permute_3_v2(const float* a_input, cons
 
 namespace ncnn {
 
-int reshape_cuda_forward(const ncnn::CudaMat& bottom_blob, ncnn::CudaMat& top_blob, const int outw, const int outh, const int outc, bool need_permute, int ndim)
+int reshape_cuda_forward(const ncnn::CudaMat& bottom_blob, ncnn::CudaMat& top_blob, const int outw, const int outh, const int outc, bool need_permute, int ndim, const Option& opt)
 {
     const int dims = bottom_blob.dims;
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
 
     const CudaMatInfo bottom_blob_info{bottom_blob};
 
@@ -138,7 +137,7 @@ int reshape_cuda_forward(const ncnn::CudaMat& bottom_blob, ncnn::CudaMat& top_bl
 
         if (dims == 2)
         {
-            bottom_blob_permuted.create(bottom_blob.w, bottom_blob.h, bottom_blob.elemsize, cuda_allocator);
+            bottom_blob_permuted.create(bottom_blob.w, bottom_blob.h, bottom_blob.elemsize, opt.blob_cuda_allocator);
             if (bottom_blob_permuted.empty())
                 return -100;
 
@@ -166,7 +165,7 @@ int reshape_cuda_forward(const ncnn::CudaMat& bottom_blob, ncnn::CudaMat& top_bl
 
         if (dims == 3)
         {
-            bottom_blob_permuted.create(bottom_blob.c, bottom_blob.w, bottom_blob.h, bottom_blob.elemsize, cuda_allocator);
+            bottom_blob_permuted.create(bottom_blob.c, bottom_blob.w, bottom_blob.h, bottom_blob.elemsize, opt.blob_cuda_allocator);
             if (bottom_blob_permuted.empty())
                 return -100;
 
@@ -194,7 +193,7 @@ int reshape_cuda_forward(const ncnn::CudaMat& bottom_blob, ncnn::CudaMat& top_bl
 
         if (ndim == 1)
         {
-            top_blob = bottom_blob_permuted.reshape(outw, cuda_allocator);
+            top_blob = bottom_blob_permuted.reshape(outw, opt.blob_cuda_allocator);
             if (top_blob.empty())
                 return -100;
 
@@ -205,11 +204,11 @@ int reshape_cuda_forward(const ncnn::CudaMat& bottom_blob, ncnn::CudaMat& top_bl
         CudaMat top_blob_permuted;
         if (ndim == 2)
         {
-            top_blob_permuted = bottom_blob_permuted.reshape(outh, outw, cuda_allocator);
+            top_blob_permuted = bottom_blob_permuted.reshape(outh, outw, opt.blob_cuda_allocator);
         }
         if (ndim == 3)
         {
-            top_blob_permuted = bottom_blob_permuted.reshape(outc, outw, outh, cuda_allocator);
+            top_blob_permuted = bottom_blob_permuted.reshape(outc, outw, outh, opt.blob_cuda_allocator);
         }
 
         if (top_blob_permuted.empty())
@@ -218,7 +217,7 @@ int reshape_cuda_forward(const ncnn::CudaMat& bottom_blob, ncnn::CudaMat& top_bl
         if (ndim == 2)
         {
             // wh -> hw
-            top_blob.create(outw, outh, bottom_blob.elemsize, cuda_allocator);
+            top_blob.create(outw, outh, bottom_blob.elemsize, opt.blob_cuda_allocator);
             if (top_blob.empty())
                 return -100;
 
@@ -248,7 +247,7 @@ int reshape_cuda_forward(const ncnn::CudaMat& bottom_blob, ncnn::CudaMat& top_bl
         if (ndim == 3)
         {
             // chw -> hwc
-            top_blob.create(outw, outh, outc, bottom_blob.elemsize, cuda_allocator);
+            top_blob.create(outw, outh, outc, bottom_blob.elemsize, opt.blob_cuda_allocator);
             if (top_blob.empty())
                 return -100;
 
@@ -281,15 +280,15 @@ int reshape_cuda_forward(const ncnn::CudaMat& bottom_blob, ncnn::CudaMat& top_bl
 
         if (ndim == 1)
         {
-            top_blob = bottom_blob.reshape(outw, cuda_allocator);
+            top_blob = bottom_blob.reshape(outw, opt.blob_cuda_allocator);
         }
         if (ndim == 2)
         {
-            top_blob = bottom_blob.reshape(outw, outh, cuda_allocator);
+            top_blob = bottom_blob.reshape(outw, outh, opt.blob_cuda_allocator);
         }
         if (ndim == 3)
         {
-            top_blob = bottom_blob.reshape(outw, outh, outc, cuda_allocator);
+            top_blob = bottom_blob.reshape(outw, outh, outc, opt.blob_cuda_allocator);
         }
 
         if (top_blob.empty())

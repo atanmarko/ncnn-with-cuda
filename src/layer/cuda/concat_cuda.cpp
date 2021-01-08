@@ -29,7 +29,7 @@ Concat_cuda::Concat_cuda()
     support_cuda = true;
 }
 
-int Concat_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option&) const
+int Concat_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const
 {
 #if LOG_LAYERS
     LOGL("Concat_cuda forward");
@@ -38,8 +38,6 @@ int Concat_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<C
     int dims = bottom_blobs[0].dims;
     size_t elemsize = bottom_blobs[0].elemsize;
     int positive_axis = axis < 0 ? dims + axis : axis;
-
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
 
     if (dims == 1) // positive_axis == 0
     {
@@ -53,7 +51,7 @@ int Concat_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<C
         }
 
         CudaMat& top_blob = top_blobs[0];
-        top_blob.create(top_w, elemsize, cuda_allocator);
+        top_blob.create(top_w, elemsize, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 
@@ -75,7 +73,7 @@ int Concat_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<C
         }
 
         CudaMat& top_blob = top_blobs[0];
-        top_blob.create(w, top_h, elemsize, cuda_allocator);
+        top_blob.create(w, top_h, elemsize, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 
@@ -96,7 +94,7 @@ int Concat_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<C
         }
 
         CudaMat& top_blob = top_blobs[0];
-        top_blob.create(top_w, h, elemsize, cuda_allocator);
+        top_blob.create(top_w, h, elemsize, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 
@@ -119,7 +117,7 @@ int Concat_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<C
         }
 
         CudaMat& top_blob = top_blobs[0];
-        top_blob.create(w, top_h, channels, elemsize, cuda_allocator);
+        top_blob.create(w, top_h, channels, elemsize, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 
@@ -142,7 +140,7 @@ int Concat_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<C
         }
 
         CudaMat& top_blob = top_blobs[0];
-        top_blob.create(top_w, h, channels, elemsize, cuda_allocator);
+        top_blob.create(top_w, h, channels, elemsize, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 
@@ -164,7 +162,7 @@ int Concat_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<C
         }
 
         CudaMat& top_blob = top_blobs[0];
-        top_blob.create(w, h, top_channels, elemsize, cuda_allocator);
+        top_blob.create(w, h, top_channels, elemsize, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 

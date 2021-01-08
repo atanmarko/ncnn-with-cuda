@@ -32,6 +32,9 @@ endif()
 add_executable(benchncnn benchncnn.cpp)
 target_link_libraries(benchncnn PRIVATE ncnn)
 
+add_executable(benchncnn_gpu benchncnn_gpu.cpp)
+target_link_libraries(benchncnn_gpu PRIVATE ncnn)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
     target_link_libraries(benchncnn PRIVATE nodefs.js)
 endif()

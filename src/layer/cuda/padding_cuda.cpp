@@ -30,6 +30,7 @@ int copy_make_border_image_3d(const CudaMat& src, CudaMat& dst, int front, int t
 
 Padding_cuda::Padding_cuda()
 {
+    _cuda_allocator = ncnn::get_current_gpu_allocator();
     support_cuda = true;
 }
 
@@ -37,11 +38,10 @@ Padding_cuda::Padding_cuda()
 
 Padding_cuda::~Padding_cuda()
 {
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    cuda_allocator->fastFree(gpu_per_channel_pad_data_char);
-    cuda_allocator->fastFree(gpu_per_channel_pad_data_unsigned_short);
-    cuda_allocator->fastFree(gpu_per_channel_pad_data_unsigned_short_use_fp16);
-    cuda_allocator->fastFree(gpu_per_channel_pad_data_float);
+    _cuda_allocator->fastFree(gpu_per_channel_pad_data_char);
+    _cuda_allocator->fastFree(gpu_per_channel_pad_data_unsigned_short);
+    _cuda_allocator->fastFree(gpu_per_channel_pad_data_unsigned_short_use_fp16);
+    _cuda_allocator->fastFree(gpu_per_channel_pad_data_float);
 
 }
 
@@ -54,8 +54,7 @@ int Padding_cuda::load_model(const CudaModelBinFromMatArray& pd)
 {
     Padding::load_model(static_cast<const ModelBinFromMatArray>(pd));
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    gpu_per_channel_pad_data = CudaMat{per_channel_pad_data, cuda_allocator};
+    gpu_per_channel_pad_data = CudaMat{per_channel_pad_data, _cuda_allocator};
 
     const int number_of_elements = per_channel_pad_data.w;
 
@@ -73,10 +72,10 @@ int Padding_cuda::load_model(const CudaModelBinFromMatArray& pd)
         padding_float[i] = pad_value;
     }
 
-    gpu_per_channel_pad_data_char = static_cast<char*>(cuda_allocator->fastMalloc(sizeof(signed char) * number_of_elements));
-    gpu_per_channel_pad_data_unsigned_short = static_cast<unsigned short*>(cuda_allocator->fastMalloc(sizeof(unsigned short) * number_of_elements));
-    gpu_per_channel_pad_data_unsigned_short_use_fp16 = static_cast<unsigned short*>(cuda_allocator->fastMalloc(sizeof(unsigned short) *number_of_elements));
-    gpu_per_channel_pad_data_float = static_cast<float*>(cuda_allocator->fastMalloc(sizeof(float) * number_of_elements));
+    gpu_per_channel_pad_data_char = static_cast<char*>(_cuda_allocator->fastMalloc(sizeof(signed char) * number_of_elements));
+    gpu_per_channel_pad_data_unsigned_short = static_cast<unsigned short*>(_cuda_allocator->fastMalloc(sizeof(unsigned short) * number_of_elements));
+    gpu_per_channel_pad_data_unsigned_short_use_fp16 = static_cast<unsigned short*>(_cuda_allocator->fastMalloc(sizeof(unsigned short) *number_of_elements));
+    gpu_per_channel_pad_data_float = static_cast<float*>(_cuda_allocator->fastMalloc(sizeof(float) * number_of_elements));
 
 
     checkCudaErrors(cudaMemcpy(gpu_per_channel_pad_data_char, padding_char.get(), sizeof(signed char) * number_of_elements, cudaMemcpyHostToDevice));
@@ -91,8 +90,7 @@ int Padding_cuda::load_model(const ModelBin& pd)
 {
     Padding::load_model(pd);
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    gpu_per_channel_pad_data = CudaMat{per_channel_pad_data, cuda_allocator};
+    gpu_per_channel_pad_data = CudaMat{per_channel_pad_data, _cuda_allocator};
 
     const int number_of_elements = per_channel_pad_data.w;
 
@@ -110,10 +108,10 @@ int Padding_cuda::load_model(const ModelBin& pd)
         padding_float[i] = pad_value;
     }
 
-    gpu_per_channel_pad_data_char = static_cast<char*>(cuda_allocator->fastMalloc(sizeof(signed char) * number_of_elements));
-    gpu_per_channel_pad_data_unsigned_short = static_cast<unsigned short*>(cuda_allocator->fastMalloc(sizeof(unsigned short) * number_of_elements));
-    gpu_per_channel_pad_data_unsigned_short_use_fp16 = static_cast<unsigned short*>(cuda_allocator->fastMalloc(sizeof(unsigned short) *number_of_elements));
-    gpu_per_channel_pad_data_float = static_cast<float*>(cuda_allocator->fastMalloc(sizeof(float) * number_of_elements));
+    gpu_per_channel_pad_data_char = static_cast<char*>(_cuda_allocator->fastMalloc(sizeof(signed char) * number_of_elements));
+    gpu_per_channel_pad_data_unsigned_short = static_cast<unsigned short*>(_cuda_allocator->fastMalloc(sizeof(unsigned short) * number_of_elements));
+    gpu_per_channel_pad_data_unsigned_short_use_fp16 = static_cast<unsigned short*>(_cuda_allocator->fastMalloc(sizeof(unsigned short) *number_of_elements));
+    gpu_per_channel_pad_data_float = static_cast<float*>(_cuda_allocator->fastMalloc(sizeof(float) * number_of_elements));
 
 
     checkCudaErrors(cudaMemcpy(gpu_per_channel_pad_data_char, padding_char.get(), sizeof(signed char) * number_of_elements, cudaMemcpyHostToDevice));
@@ -142,8 +140,6 @@ int Padding_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const O
     int dims = bottom_blob.dims;
     size_t elemsize = bottom_blob.elemsize;
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
     int outw = w + left + right;
     int outh = h + top + bottom;
     int outc = channels + front + behind;
@@ -155,14 +151,14 @@ int Padding_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const O
         if (dims == 1)
         {
             top_value = 0;
-            top_blob.create(outw, elemsize, cuda_allocator);
+            top_blob.create(outw, elemsize, opt.blob_cuda_allocator);
             if (top_blob.empty())
                 return -100;
         }
 
         if (dims == 2)
         {
-            top_blob.create(outw, outh, elemsize, cuda_allocator);
+            top_blob.create(outw, outh, elemsize, opt.blob_cuda_allocator);
             if (top_blob.empty())
                 return -100;
         }
@@ -187,7 +183,7 @@ int Padding_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const O
     }
     else if (dims == 3)
     {
-        top_blob.create(outw, outh, outc, elemsize, cuda_allocator);
+        top_blob.create(outw, outh, outc, elemsize, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 

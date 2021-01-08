@@ -32,14 +32,13 @@ Softmax_cuda::Softmax_cuda()
 {
     support_cuda = true;
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    gpu_scratch_pad_memory = static_cast<float *>(cuda_allocator->fastMalloc(gpu_scratch_pad_memory_size));
+    _cuda_allocator = ncnn::get_current_gpu_allocator();
+    gpu_scratch_pad_memory = static_cast<float *>(_cuda_allocator->fastMalloc(gpu_scratch_pad_memory_size));
 }
 
 Softmax_cuda::~Softmax_cuda()
 {
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    cuda_allocator->fastFree(gpu_scratch_pad_memory);
+    _cuda_allocator->fastFree(gpu_scratch_pad_memory);
 }
 
 
