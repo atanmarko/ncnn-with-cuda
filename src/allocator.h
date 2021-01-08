@@ -227,6 +227,52 @@ public:
 
 std::shared_ptr<ncnn::CudaAllocator> get_current_gpu_allocator();
 
+class CudaPoolAllocator : public CudaAllocator
+{
+public:
+    CudaPoolAllocator(const CudaDevice* _cudev);
+    ~CudaPoolAllocator();
+
+    // ratio range 0 ~ 1
+    // default cr = 0.75
+    void set_size_compare_ratio(float scr);
+
+    // release all budgets immediately
+    void clear();
+
+    virtual void* fastMalloc(size_t size);
+    virtual void fastFree(void* ptr);
+
+private:
+    Mutex budgets_lock;
+    Mutex payouts_lock;
+    unsigned int size_compare_ratio; // 0~256
+    std::list<std::pair<size_t, void*> > budgets;
+    std::list<std::pair<size_t, void*> > payouts;
+};
+
+class CudaUnlockedPoolAllocator : public CudaAllocator
+{
+public:
+    CudaUnlockedPoolAllocator(const CudaDevice* _cudev);
+    ~CudaUnlockedPoolAllocator();
+
+    // ratio range 0 ~ 1
+    // default cr = 0.75
+    void set_size_compare_ratio(float scr);
+
+    // release all budgets immediately
+    void clear();
+
+    virtual void* fastMalloc(size_t size);
+    virtual void fastFree(void* ptr);
+
+private:
+    unsigned int size_compare_ratio; // 0~256
+    std::list<std::pair<size_t, void*> > budgets;
+    std::list<std::pair<size_t, void*> > payouts;
+};
+
 #endif
 
 #if NCNN_VULKAN

@@ -481,33 +481,32 @@ int binary_op_cuda_forward(const CudaMat& a, const CudaMat& b, CudaMat& c, const
     CudaMatInfo a_info{a};
     CudaMatInfo b_info{b};
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
 
     if (a_info.dims == 3) {
         if ((a_info.w == 1 && a_info.h == 1 && a_info.c == b_info.c) ||
             (a_info.w == b_info.w && a_info.h == b_info.h && a_info.c == 1))
         {
-            c.create(b_info.w, b_info.h, b_info.c, b_info.elemsize, cuda_allocator);
+            c.create(b_info.w, b_info.h, b_info.c, b_info.elemsize, opt.blob_cuda_allocator);
         }
         else {
-            c.create(a_info.w, a_info.h, a_info.c, a_info.elemsize, cuda_allocator);
+            c.create(a_info.w, a_info.h, a_info.c, a_info.elemsize, opt.blob_cuda_allocator);
         }
     } else if (a_info.dims == 2) {
         if (b_info.dims == 3) {
-            c.create(b_info.w, b_info.h, b_info.c, a_info.elemsize, cuda_allocator);
+            c.create(b_info.w, b_info.h, b_info.c, a_info.elemsize, opt.blob_cuda_allocator);
         } else {
-            c.create(a_info.w, a_info.h, a_info.elemsize, cuda_allocator);
+            c.create(a_info.w, a_info.h, a_info.elemsize, opt.blob_cuda_allocator);
         }
     } else if (a_info.dims == 1) {
             if (b.dims == 3)
-                c.create(b_info.w, b_info.h, b_info.c, b_info.elemsize, cuda_allocator);
+                c.create(b_info.w, b_info.h, b_info.c, b_info.elemsize, opt.blob_cuda_allocator);
             else if (b.dims == 2)
-                c.create(b_info.w, b_info.h, b_info.elemsize, cuda_allocator);
+                c.create(b_info.w, b_info.h, b_info.elemsize, opt.blob_cuda_allocator);
             else if (b.dims == 1 ) {
                 if (a_info.w != 1)
-                    c.create(a_info.w, a_info.elemsize, cuda_allocator);
+                    c.create(a_info.w, a_info.elemsize, opt.blob_cuda_allocator);
                 else
-                    c.create(b_info.w, b_info.elemsize, cuda_allocator);
+                    c.create(b_info.w, b_info.elemsize, opt.blob_cuda_allocator);
             }
     }
 

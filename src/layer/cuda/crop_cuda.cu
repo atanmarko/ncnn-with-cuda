@@ -73,7 +73,7 @@ __global__ void gpu_crop_copy_cut_border_image(const T* a_input, const ncnn::Cud
 
 namespace ncnn {
 
-int crop_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Crop_cuda::Crop_info crop_info)
+int crop_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Crop_cuda::Crop_info crop_info, const Option& opt)
 {
     int input_w = bottom_blob.w;
     int input_h = bottom_blob.h;
@@ -84,13 +84,11 @@ int crop_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Crop_
     const ncnn::CudaMatInfo bottom_blob_info{bottom_blob};
     ncnn::CudaMatInfo top_blob_info{top_blob};
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
     if (input_dims == 1) {
         if (crop_info.outw == input_w) {
             top_blob = bottom_blob;
         }
-        top_blob.create(crop_info.outw, input_elemsize, cuda_allocator);
+        top_blob.create(crop_info.outw, input_elemsize, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 
@@ -104,7 +102,7 @@ int crop_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Crop_
             return 0;
         }
 
-        top_blob.create(crop_info.outw, crop_info.outh, input_elemsize, cuda_allocator);
+        top_blob.create(crop_info.outw, crop_info.outh, input_elemsize, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 
@@ -118,7 +116,7 @@ int crop_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Crop_
             return 0;
         }
 
-        top_blob.create(crop_info.outw, crop_info.outh, crop_info.outc, input_elemsize, cuda_allocator);
+        top_blob.create(crop_info.outw, crop_info.outh, crop_info.outc, input_elemsize, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 

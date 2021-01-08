@@ -59,14 +59,14 @@ __global__ void gpu_quantize_forward(const float* a_input, const ncnn::CudaMatIn
 
 namespace ncnn {
 
-int quantize_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, float scale, std::shared_ptr<ncnn::CudaAllocator> blob_cuda_allocator = nullptr)
+int quantize_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, float scale, std::shared_ptr<ncnn::CudaAllocator> cuda_allocator)
 {
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator;
-
-    if (blob_cuda_allocator.use_count() > 0)
-        cuda_allocator = blob_cuda_allocator;
-    else
-        cuda_allocator = ncnn::get_current_gpu_allocator();
+//    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator;
+//
+//    if (blob_cuda_allocator.use_count() > 0)
+//        cuda_allocator = blob_cuda_allocator;
+//    else
+//        cuda_allocator = ncnn::get_current_gpu_allocator();
 
     if (bottom_blob.dims == 1)
     {

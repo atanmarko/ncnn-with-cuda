@@ -88,7 +88,7 @@ __global__ void gpu_packing_forward_3(const float* a_input, const ncnn::CudaMatI
 
 namespace ncnn {
 
-int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Packing_cuda::packing_options options)
+int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Packing_cuda::packing_options options, const Option& opt)
 {
     int elempack = bottom_blob.elempack;
 
@@ -124,8 +124,6 @@ int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Pa
         }
     }
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
     if (dims == 1)
     {
         if (options.out_elempack == 1)
@@ -142,7 +140,7 @@ int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Pa
         size_t out_elemsize = elemsize / elempack * options.out_elempack;
 
 
-        top_blob.create(outw, out_elemsize, options.out_elempack, cuda_allocator);
+        top_blob.create(outw, out_elemsize, options.out_elempack, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 
@@ -156,7 +154,7 @@ int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Pa
         int outh = (h * elempack + options.out_elempack - 1) / options.out_elempack;
         size_t out_elemsize = elemsize / elempack * options.out_elempack;
 
-        top_blob.create(w, outh, out_elemsize, options.out_elempack, cuda_allocator);
+        top_blob.create(w, outh, out_elemsize, options.out_elempack, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 
@@ -187,7 +185,7 @@ int packing_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Pa
         int outc = (channels * elempack + options.out_elempack - 1) / options.out_elempack;
         size_t out_elemsize = elemsize / elempack * options.out_elempack;
 
-        top_blob.create(w, h, outc, out_elemsize, options.out_elempack, cuda_allocator);
+        top_blob.create(w, h, outc, out_elemsize, options.out_elempack, opt.blob_cuda_allocator);
         if (top_blob.empty())
             return -100;
 

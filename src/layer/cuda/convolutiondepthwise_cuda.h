@@ -28,7 +28,7 @@ class ConvolutionDepthWise_cuda : virtual public ConvolutionDepthWise
 public:
     struct ConvolutionDepthWise_info
     {
-        ConvolutionDepthWise_info(const ConvolutionDepthWise_cuda& info, std::vector<int>& _space_ofs)
+        ConvolutionDepthWise_info(const ConvolutionDepthWise_cuda& info, std::vector<int>& _space_ofs, const Option& opt)
             : num_output(info.num_output),
               kernel_w(info.kernel_w),
               kernel_h(info.kernel_h),
@@ -59,12 +59,11 @@ public:
             kernel_extent_h = dilation_h * (kernel_h - 1) + 1;
             maxk = kernel_w * kernel_h;
 
-            std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-            auto deleter = [](int* pointer) {
+            auto deleter = [&opt](int* pointer) {
               std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-              cuda_allocator->fastFree(pointer);
+              opt.blob_cuda_allocator->fastFree(pointer);
             };
-            gpu_space_ofs = std::shared_ptr<int>(static_cast<int*>(cuda_allocator->fastMalloc(_space_ofs.size() * sizeof(int))), deleter);
+            gpu_space_ofs = std::shared_ptr<int>(static_cast<int*>(opt.blob_cuda_allocator->fastMalloc(_space_ofs.size() * sizeof(int))), deleter);
             checkCudaErrors(cudaMemcpy(gpu_space_ofs.get(), _space_ofs.data(), _space_ofs.size() * sizeof(int), cudaMemcpyHostToDevice));
         }
 
@@ -128,6 +127,8 @@ protected:
 
     int forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const;
 
+    std::shared_ptr<ncnn::CudaAllocator> _cuda_allocator;
+
 public:
     CudaMat gpu_activation_params;
 
@@ -138,6 +139,7 @@ public:
     CudaMat gpu_weight_data_int8_scales;
     CudaMat gpu_bottom_blob_int8_scales;
     float* gpu_top_blob_int8_scale;
+
 
 };
 

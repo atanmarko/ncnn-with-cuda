@@ -1061,6 +1061,11 @@ int test_layer_naive(int typeindex, const ncnn::ParamDict& pd, const std::vector
     opt.use_vulkan_compute = false;
     opt.use_weight_fp16_storage = false;
 
+#if NCNN_CUDA
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+    opt.blob_cuda_allocator = cuda_allocator;
+    opt.workspace_cuda_allocator = cuda_allocator;
+#endif
     op->create_pipeline(opt);
 
     auto begin = std::chrono::high_resolution_clock::now();
@@ -1128,6 +1133,12 @@ int test_layer_cpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
         opt.use_fp16_storage = false;
         opt.use_packing_layout = false;
     }
+
+#if NCNN_CUDA
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+    opt.blob_cuda_allocator = cuda_allocator;
+    opt.workspace_cuda_allocator = cuda_allocator;
+#endif
 
     op->create_pipeline(opt);
 

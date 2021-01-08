@@ -29,22 +29,20 @@ int convolutiondepthwise_cuda_forward_int8(const CudaMat& bottom_blob, CudaMat& 
 ConvolutionDepthWise_cuda::ConvolutionDepthWise_cuda()
 {
     support_cuda = true;
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    gpu_top_blob_int8_scale = static_cast<float *>(cuda_allocator->fastMalloc(sizeof(float)));
+    _cuda_allocator = ncnn::get_current_gpu_allocator();
+    gpu_top_blob_int8_scale = static_cast<float *>(_cuda_allocator->fastMalloc(sizeof(float)));
 }
 
 ConvolutionDepthWise_cuda::~ConvolutionDepthWise_cuda()
 {
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    cuda_allocator->fastFree(gpu_top_blob_int8_scale);
+    _cuda_allocator->fastFree(gpu_top_blob_int8_scale);
 }
 
 int ConvolutionDepthWise_cuda::load_param(const ParamDict& pd)
 {
     ConvolutionDepthWise::load_param(pd);
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    gpu_activation_params = CudaMat{activation_params, cuda_allocator};
+    gpu_activation_params = CudaMat{activation_params, _cuda_allocator};
 
     return 0;
 }
@@ -55,19 +53,17 @@ int ConvolutionDepthWise_cuda::load_model(const CudaModelBinFromMatArray& mb)
     if (result < 0)
         return result;
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
-    gpu_weight_data = CudaMat{weight_data, cuda_allocator};
+    gpu_weight_data = CudaMat{weight_data, _cuda_allocator};
 
     if (bias_term)
     {
-        gpu_bias_data = CudaMat{bias_data, cuda_allocator};
+        gpu_bias_data = CudaMat{bias_data, _cuda_allocator};
     }
 
     if (int8_scale_term)
     {
-        gpu_weight_data_int8_scales = CudaMat{weight_data_int8_scales, cuda_allocator};
-        gpu_bottom_blob_int8_scales = CudaMat{bottom_blob_int8_scales, cuda_allocator};
+        gpu_weight_data_int8_scales = CudaMat{weight_data_int8_scales, _cuda_allocator};
+        gpu_bottom_blob_int8_scales = CudaMat{bottom_blob_int8_scales, _cuda_allocator};
         checkCudaErrors(cudaMemcpy(gpu_top_blob_int8_scale, &top_blob_int8_scale, sizeof(float), cudaMemcpyHostToDevice));
     }
 
@@ -80,19 +76,17 @@ int ConvolutionDepthWise_cuda::load_model(const ModelBin& mb)
     if (result < 0)
         return result;
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
-    gpu_weight_data = CudaMat{weight_data, cuda_allocator};
+    gpu_weight_data = CudaMat{weight_data, _cuda_allocator};
 
     if (bias_term)
     {
-        gpu_bias_data = CudaMat{bias_data, cuda_allocator};
+        gpu_bias_data = CudaMat{bias_data, _cuda_allocator};
     }
 
     if (int8_scale_term)
     {
-        gpu_weight_data_int8_scales = CudaMat{weight_data_int8_scales, cuda_allocator};
-        gpu_bottom_blob_int8_scales = CudaMat{bottom_blob_int8_scales, cuda_allocator};
+        gpu_weight_data_int8_scales = CudaMat{weight_data_int8_scales, _cuda_allocator};
+        gpu_bottom_blob_int8_scales = CudaMat{bottom_blob_int8_scales, _cuda_allocator};
         checkCudaErrors(cudaMemcpy(gpu_top_blob_int8_scale, &top_blob_int8_scale, sizeof(float), cudaMemcpyHostToDevice));
     }
 
@@ -112,6 +106,7 @@ void ConvolutionDepthWise_cuda::make_padding(const CudaMat& bottom_blob, CudaMat
     {
         Option opt_b = opt;
         opt_b.blob_allocator = opt.workspace_allocator;
+        opt_b.blob_cuda_allocator = opt.workspace_cuda_allocator;
         copy_make_border(bottom_blob, bottom_blob_bordered, pad_top, pad_bottom, pad_left, pad_right, BORDER_CONSTANT, pad_value, opt_b);
     }
     else if (pad_left == -233 && pad_right == -233 && pad_top == -233 && pad_bottom == -233)
@@ -123,6 +118,7 @@ void ConvolutionDepthWise_cuda::make_padding(const CudaMat& bottom_blob, CudaMat
         {
             Option opt_b = opt;
             opt_b.blob_allocator = opt.workspace_allocator;
+            opt_b.blob_cuda_allocator = opt.workspace_cuda_allocator;
             copy_make_border(bottom_blob, bottom_blob_bordered, hpad / 2, hpad - hpad / 2, wpad / 2, wpad - wpad / 2, BORDER_CONSTANT, pad_value, opt_b);
         }
     }
@@ -135,6 +131,7 @@ void ConvolutionDepthWise_cuda::make_padding(const CudaMat& bottom_blob, CudaMat
         {
             Option opt_b = opt;
             opt_b.blob_allocator = opt.workspace_allocator;
+            opt_b.blob_cuda_allocator = opt.workspace_cuda_allocator;
             copy_make_border(bottom_blob, bottom_blob_bordered, hpad - hpad / 2, hpad / 2, wpad - wpad / 2, wpad / 2, BORDER_CONSTANT, pad_value, opt_b);
         }
     }
@@ -147,8 +144,7 @@ int ConvolutionDepthWise_cuda::create_pipeline(const Option& opt)
 
     if (opt.use_int8_inference && elemsize == (size_t)4u && int8_scale_term)
     {
-        std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-        gpu_weight_data = CudaMat{weight_data, cuda_allocator};
+        gpu_weight_data = CudaMat{weight_data, opt.blob_cuda_allocator};
     }
 
     return 0;
@@ -210,15 +206,13 @@ int ConvolutionDepthWise_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_
         }
     }
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
     // float32
     // float32
-    top_blob.create(outw, outh, num_output, elemsize, cuda_allocator);
+    top_blob.create(outw, outh, num_output, elemsize, opt.blob_cuda_allocator);
     if (top_blob.empty())
         return -100;
 
-    return convolutiondepthwise_cuda_forward(bottom_blob_bordered, top_blob, ConvolutionDepthWise_info(*this, _space_ofs));
+    return convolutiondepthwise_cuda_forward(bottom_blob_bordered, top_blob, ConvolutionDepthWise_info(*this, _space_ofs, opt));
 }
 
 
@@ -241,12 +235,10 @@ int ConvolutionDepthWise_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat&
     const int kernel_extent_w = dilation_w * (kernel_w - 1) + 1;
     const int kernel_extent_h = dilation_h * (kernel_h - 1) + 1;
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
     CudaMat bottom_blob_unbordered = bottom_blob;
     if (elemsize != 1)
     {
-        bottom_blob_unbordered.create(w, h, channels, (size_t)1u, cuda_allocator);
+        bottom_blob_unbordered.create(w, h, channels, (size_t)1u, opt.workspace_cuda_allocator);
         if (bottom_blob_unbordered.empty())
             return -100;
 
@@ -301,11 +293,11 @@ int ConvolutionDepthWise_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat&
     // int8
     size_t out_elemsize = use_int8_requantize ? 1u : 4u;
 
-    top_blob.create(outw, outh, num_output, out_elemsize, cuda_allocator);
+    top_blob.create(outw, outh, num_output, out_elemsize, opt.blob_cuda_allocator);
     if (top_blob.empty())
         return -100;
 
-    return convolutiondepthwise_cuda_forward_int8(bottom_blob_bordered, top_blob, ConvolutionDepthWise_info(*this, _space_ofs));
+    return convolutiondepthwise_cuda_forward_int8(bottom_blob_bordered, top_blob, ConvolutionDepthWise_info(*this, _space_ofs, opt));
 }
 
 

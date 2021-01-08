@@ -31,24 +31,22 @@ int innerproduct_cuda_forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob
 InnerProduct_cuda::InnerProduct_cuda()
 {
     support_cuda = true;
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    gpu_scratch_pad_memory = static_cast<float *>(cuda_allocator->fastMalloc(gpu_scratch_pad_memory_size));
-    gpu_bottom_blob_int8_scale = static_cast<float *>(cuda_allocator->fastMalloc(sizeof(float)));
+    _cuda_allocator = ncnn::get_current_gpu_allocator();
+    gpu_scratch_pad_memory = static_cast<float *>(_cuda_allocator->fastMalloc(gpu_scratch_pad_memory_size));
+    gpu_bottom_blob_int8_scale = static_cast<float *>(_cuda_allocator->fastMalloc(sizeof(float)));
 }
 
 InnerProduct_cuda::~InnerProduct_cuda()
 {
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    cuda_allocator->fastFree(gpu_scratch_pad_memory);
-    cuda_allocator->fastFree(gpu_bottom_blob_int8_scale);
+    _cuda_allocator->fastFree(gpu_scratch_pad_memory);
+    _cuda_allocator->fastFree(gpu_bottom_blob_int8_scale);
 }
 
 int InnerProduct_cuda::load_param(const ParamDict& pd)
 {
     InnerProduct::load_param(pd);
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    gpu_activation_params = CudaMat{activation_params, cuda_allocator};
+    gpu_activation_params = CudaMat{activation_params, _cuda_allocator};
 
     return 0;
 }
@@ -59,18 +57,16 @@ int InnerProduct_cuda::load_model(const CudaModelBinFromMatArray& mb)
     if (result < 0)
         return result;
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
-    gpu_weight_data = CudaMat{weight_data, cuda_allocator};
+    gpu_weight_data = CudaMat{weight_data, _cuda_allocator};
 
     if (bias_term)
     {
-        gpu_bias_data = CudaMat{bias_data, cuda_allocator};
+        gpu_bias_data = CudaMat{bias_data, _cuda_allocator};
     }
 
     if (int8_scale_term)
     {
-        gpu_weight_data_int8_scales = CudaMat{weight_data_int8_scales, cuda_allocator};
+        gpu_weight_data_int8_scales = CudaMat{weight_data_int8_scales, _cuda_allocator};
         checkCudaErrors(cudaMemcpy(gpu_bottom_blob_int8_scale, &bottom_blob_int8_scale, sizeof(float), cudaMemcpyHostToDevice));
     }
 
@@ -83,18 +79,16 @@ int InnerProduct_cuda::load_model(const ModelBin& mb)
     if (result < 0)
         return result;
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
-    gpu_weight_data = CudaMat{weight_data, cuda_allocator};
+    gpu_weight_data = CudaMat{weight_data, _cuda_allocator};
 
     if (bias_term)
     {
-        gpu_bias_data = CudaMat{bias_data, cuda_allocator};
+        gpu_bias_data = CudaMat{bias_data, _cuda_allocator};
     }
 
     if (int8_scale_term)
     {
-        gpu_weight_data_int8_scales = CudaMat{weight_data_int8_scales, cuda_allocator};
+        gpu_weight_data_int8_scales = CudaMat{weight_data_int8_scales, _cuda_allocator};
         checkCudaErrors(cudaMemcpy(gpu_bottom_blob_int8_scale, &bottom_blob_int8_scale, sizeof(float), cudaMemcpyHostToDevice));
     }
 
@@ -108,8 +102,7 @@ int InnerProduct_cuda::create_pipeline(const Option& opt)
 
     if (opt.use_int8_inference && weight_elemsize == (size_t)4u && int8_scale_term)
     {
-        std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-        gpu_weight_data = CudaMat{weight_data, cuda_allocator};
+        gpu_weight_data = CudaMat{weight_data, opt.blob_cuda_allocator};
     }
 
     return 0;
@@ -125,9 +118,7 @@ int InnerProduct_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, co
         return forward_int8(bottom_blob, top_blob, opt);
     }
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
-    top_blob.create(num_output, bottom_blob.elemsize, cuda_allocator);
+    top_blob.create(num_output, bottom_blob.elemsize, opt.blob_cuda_allocator);
     if (top_blob.empty())
         return -100;
 
@@ -143,14 +134,12 @@ int InnerProduct_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat& top_blo
     if (bottom_blob.elemsize != 1)
     {
         Option opt_g = opt;
-        opt_g.blob_allocator = opt.workspace_allocator;
+        opt_g.blob_cuda_allocator = opt.workspace_cuda_allocator;
 
         quantize_float32_to_int8(bottom_blob, bottom_blob_tm, bottom_blob_int8_scale, opt_g);
     }
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
-    top_blob.create(num_output, 4u, cuda_allocator);
+    top_blob.create(num_output, 4u, opt.blob_cuda_allocator);
     if (top_blob.empty())
         return -100;
 

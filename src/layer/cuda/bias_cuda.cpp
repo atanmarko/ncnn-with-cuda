@@ -28,19 +28,20 @@ int bias_cuda_forward_inplace(float* a_input, const ncnn::CudaMatInfo& a_info, c
 Bias_cuda::Bias_cuda()
 {
     support_cuda = true;
+    _cuda_allocator = ncnn::get_current_gpu_allocator();
 }
 
 
 int Bias_cuda::load_model(const CudaModelBinFromMatArray& mb)
 {
+    Bias::load_model(mb);
+
     if (!this->support_cuda)
         return -100;
 
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
-    bias_data = CudaMat{mb.load(bias_data_size, 1), cuda_allocator};
-    if (bias_data.empty())
+    gpu_bias_data = CudaMat{bias_data, _cuda_allocator};
+    if (gpu_bias_data.empty())
         return -100;
 
     return 0;
@@ -48,14 +49,13 @@ int Bias_cuda::load_model(const CudaModelBinFromMatArray& mb)
 
 int Bias_cuda::load_model(const ModelBin& mb)
 {
+    Bias::load_model(mb);
+
     if (!this->support_cuda)
         return -100;
 
-
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-
-    bias_data = CudaMat{mb.load(bias_data_size, 1), cuda_allocator};
-    if (bias_data.empty())
+    gpu_bias_data = CudaMat{bias_data, _cuda_allocator};
+    if (gpu_bias_data.empty())
         return -100;
 
     return 0;
@@ -69,7 +69,7 @@ int Bias_cuda::forward_inplace(CudaMat& bottom_top_blob, const Option& opt __att
     CudaMatInfo a_info{bottom_top_blob};
 
     return bias_cuda_forward_inplace(static_cast<float*>(bottom_top_blob.get_raw_data()), a_info,
-                              static_cast<const float*>(bias_data.get_craw_data()));
+                              static_cast<const float*>(gpu_bias_data.get_craw_data()));
 }
 
 } // namespace ncnn

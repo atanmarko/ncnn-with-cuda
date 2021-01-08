@@ -69,6 +69,8 @@ public:
     unsigned short* gpu_per_channel_pad_data_unsigned_short_use_fp16{nullptr};
     float* gpu_per_channel_pad_data_float{nullptr};
 
+protected:
+    std::shared_ptr<ncnn::CudaAllocator> _cuda_allocator;
 };
 
 } // namespace ncnn

@@ -114,6 +114,8 @@ protected:
 
     int forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const;
 
+    std::shared_ptr<ncnn::CudaAllocator> _cuda_allocator;
+
 public:
     CudaMat gpu_activation_params;
 

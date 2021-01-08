@@ -33,10 +33,12 @@ public:
 
     virtual int forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const;
 
-private:
+protected:
 
     // model
-    CudaMat bias_data;
+    CudaMat gpu_bias_data;
+
+    std::shared_ptr<ncnn::CudaAllocator> _cuda_allocator;
 };
 
 } // namespace ncnn

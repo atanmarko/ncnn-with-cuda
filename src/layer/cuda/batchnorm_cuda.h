@@ -47,7 +47,7 @@ public:
     mutable CudaMat b_data_gpu;
 
 private:
-    std::shared_ptr<CudaAllocator> _allocator;
+    std::shared_ptr<CudaAllocator> _cuda_allocator;
 
 };
 

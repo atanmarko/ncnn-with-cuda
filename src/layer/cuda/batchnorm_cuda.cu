@@ -23,15 +23,15 @@
 
 #include <iostream>
 
-__global__ void gpu_batchnorm_load_model(int channels, float eps, float* a_data_gpu, float* b_data_gpu,
-                                         float* bias_data_gpu, float* slope_data_gpu, float* mean_data_gpu, float* var_data_gpu)
-{
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= channels) return;
-    const float sqrt_var = static_cast<float>(sqrt(var_data_gpu[i] + eps));
-    a_data_gpu[i] = bias_data_gpu[i] - slope_data_gpu[i] * mean_data_gpu[i] / sqrt_var;
-    b_data_gpu[i] = slope_data_gpu[i] / sqrt_var;
-}
+//__global__ void gpu_batchnorm_load_model(int channels, float eps, float* a_data_gpu, float* b_data_gpu,
+//                                         float* bias_data_gpu, float* slope_data_gpu, float* mean_data_gpu, float* var_data_gpu)
+//{
+//    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+//    if (i >= channels) return;
+//    const float sqrt_var = static_cast<float>(sqrt(var_data_gpu[i] + eps));
+//    a_data_gpu[i] = bias_data_gpu[i] - slope_data_gpu[i] * mean_data_gpu[i] / sqrt_var;
+//    b_data_gpu[i] = slope_data_gpu[i] / sqrt_var;
+//}
 
 // input is 1 dimension
 __global__ void gpu_batchnorm_forward_inplace_1(float* d_input, const float* b_data, const float* a_data, const ncnn::CudaMatInfo mat_info, const int input_size)
@@ -76,16 +76,16 @@ __global__ void gpu_batchnorm_forward_inplace_3(float* d_input, const float* b_d
 namespace ncnn {
 
 
-int batchnorm_cuda_load_model(int channels, float eps, float* a_data_gpu, float* b_data_gpu,
-                         float* bias_data_gpu, float* slope_data_gpu, float* mean_data_gpu, float* var_data_gpu)
-{
-
-    gpu_batchnorm_load_model<<<1, channels>>>(channels, eps, a_data_gpu, b_data_gpu,
-                                                bias_data_gpu, slope_data_gpu, mean_data_gpu,
-                                                var_data_gpu);
-
-    return 0;
-}
+//int batchnorm_cuda_load_model(int channels, float eps, float* a_data_gpu, float* b_data_gpu,
+//                         float* bias_data_gpu, float* slope_data_gpu, float* mean_data_gpu, float* var_data_gpu)
+//{
+//
+//    gpu_batchnorm_load_model<<<1, channels>>>(channels, eps, a_data_gpu, b_data_gpu,
+//                                                bias_data_gpu, slope_data_gpu, mean_data_gpu,
+//                                                var_data_gpu);
+//
+//    return 0;
+//}
 
 
 

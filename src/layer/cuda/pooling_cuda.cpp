@@ -136,7 +136,7 @@ int Pooling_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const O
         if (top_blob.empty())
             return -100;
 
-        return pooling_cuda_forward_global(bottom_blob, top_blob, Pooling_info(*this, std::vector<int>{}));
+        return pooling_cuda_forward_global(bottom_blob, top_blob, Pooling_info(*this, std::vector<int>{}, opt));
     }
 
     CudaMat bottom_blob_bordered;
@@ -174,7 +174,7 @@ int Pooling_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const O
         }
     }
 
-    Pooling_info info{*this, _space_ofs};
+    Pooling_info info{*this, _space_ofs, opt};
 
     if (avgpool_count_include_pad == 0)
     {

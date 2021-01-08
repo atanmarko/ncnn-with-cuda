@@ -30,7 +30,7 @@ Flatten_cuda::Flatten_cuda()
     support_cuda = true;
 }
 
-int Flatten_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option&) const
+int Flatten_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
 {
 #if LOG_LAYERS
     LOGL("Flatten_cuda forward");
@@ -44,8 +44,7 @@ int Flatten_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, const O
     size_t elemsize = bottom_blob.elemsize;
     int size = w * h;
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
-    top_blob.create(size * channels, elemsize, cuda_allocator);
+    top_blob.create(size * channels, elemsize, opt.blob_cuda_allocator);
     if (top_blob.empty())
         return -100;
 

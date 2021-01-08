@@ -33,7 +33,9 @@ static int test_packing_gpu_fp32(const ncnn::Mat& a, int in_elempack, int out_el
     opt.use_fp16_arithmetic = false;
     opt.use_packing_layout = false;
 
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+
+    opt.blob_cuda_allocator = ncnn::get_current_gpu_allocator();
+    opt.workspace_cuda_allocator = ncnn::get_current_gpu_allocator();
 
     ncnn::Layer* op = ncnn::create_layer("Packing");
 
@@ -59,8 +61,8 @@ static int test_packing_gpu_fp32(const ncnn::Mat& a, int in_elempack, int out_el
 
     //GPU
     ncnn::CudaMat ap_gpu;
-    ncnn::CudaMat a_gpu{a, cuda_allocator};
-    ncnn::convert_packing(a_gpu, ap_gpu, in_elempack);
+    ncnn::CudaMat a_gpu{a, opt.blob_cuda_allocator};
+    ncnn::convert_packing(a_gpu, ap_gpu, in_elempack, opt);
     ncnn::CudaMat b_gpu;
     auto begin = std::chrono::high_resolution_clock::now();
     ((ncnn::Packing*)op)->forward(ap_gpu, b_gpu, opt);
@@ -131,6 +133,8 @@ static int test_packing_gpu_fp16(const ncnn::Mat& a, int in_elempack, int out_el
     opt.use_fp16_arithmetic = true;
     opt.use_packing_layout = false;
 
+    opt.blob_cuda_allocator = ncnn::get_current_gpu_allocator();
+
     ncnn::Layer* op = ncnn::create_layer("Packing");
 
     if (!op->support_fp16_storage)
@@ -153,7 +157,7 @@ static int test_packing_gpu_fp16(const ncnn::Mat& a, int in_elempack, int out_el
     ncnn::Mat a16;
     ncnn::cast_float32_to_float16(a, a16);
     ncnn::Mat ap;
-    ncnn::convert_packing(a16, ap, in_elempack);
+    ncnn::convert_packing(a16, ap, in_elempack, opt);
     ncnn::Mat b_cpu;
     auto begin_cpu = std::chrono::high_resolution_clock::now();
     ((ncnn::Packing*)op)->ncnn::Packing::forward(ap, b_cpu, opt);
