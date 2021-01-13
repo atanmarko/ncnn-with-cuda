@@ -23,8 +23,10 @@
 
 namespace ncnn {
 
-int innerproduct_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const InnerProduct_cuda::InnerProduct_info& info,
+int innerproduct_cuda_forward_01(const CudaMat& bottom_blob, CudaMat& top_blob, const InnerProduct_cuda::InnerProduct_info& info,
                               float* gpu_scratchpad_memory, int gpu_scratchpad_memory_size);
+int innerproduct_cuda_forward_02(const CudaMat& bottom_blob, CudaMat& top_blob, const InnerProduct_cuda::InnerProduct_info& info,
+                                 float* gpu_scratchpad_memory, int gpu_scratchpad_memory_size);
 int innerproduct_cuda_forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const InnerProduct_cuda::InnerProduct_info& info,
                                    float* gpu_scratchpad_memory, int gpu_scratchpad_memory_size);
 
@@ -113,6 +115,7 @@ int InnerProduct_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, co
 #if LOG_LAYERS
     LOGL("InnerProduct_cuda forward");
 #endif
+
     if (opt.use_int8_inference && gpu_weight_data.elemsize == (size_t)1u)
     {
         return forward_int8(bottom_blob, top_blob, opt);
@@ -122,7 +125,13 @@ int InnerProduct_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, co
     if (top_blob.empty())
         return -100;
 
-    return innerproduct_cuda_forward(bottom_blob, top_blob, InnerProduct_info(*this), gpu_scratch_pad_memory, gpu_scratch_pad_memory_size);
+    if (bottom_blob.c * num_output < 65000)
+    {
+        return innerproduct_cuda_forward_01(bottom_blob, top_blob, InnerProduct_info(*this), gpu_scratch_pad_memory, gpu_scratch_pad_memory_size);
+    }
+    else {
+        return innerproduct_cuda_forward_02(bottom_blob, top_blob, InnerProduct_info(*this), gpu_scratch_pad_memory, gpu_scratch_pad_memory_size);
+    }
 }
 
 int InnerProduct_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const
@@ -143,8 +152,13 @@ int InnerProduct_cuda::forward_int8(const CudaMat& bottom_blob, CudaMat& top_blo
     if (top_blob.empty())
         return -100;
 
-    return innerproduct_cuda_forward_int8(bottom_blob_tm, top_blob, InnerProduct_info(*this),
-                                          gpu_scratch_pad_memory, gpu_scratch_pad_memory_size);
+    if (bottom_blob.c * num_output < 65000)
+    {
+        return innerproduct_cuda_forward_int8(bottom_blob_tm, top_blob, InnerProduct_info(*this),
+                                              gpu_scratch_pad_memory, gpu_scratch_pad_memory_size);
+    } else {
+        throw  std::runtime_error("Not implemented");
+    }
 }
 
 

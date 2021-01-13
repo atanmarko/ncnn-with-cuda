@@ -82,7 +82,7 @@ public:
 
 private:
     float* gpu_scratch_pad_memory;
-    const int gpu_scratch_pad_memory_size{1024*1024}; //IMPORTANT: matrix size limited by scratchpad memory
+    const int gpu_scratch_pad_memory_size{16*1024*1024}; //IMPORTANT: matrix size limited by scratchpad memory
     std::shared_ptr<ncnn::CudaAllocator> _cuda_allocator;
 
 };
