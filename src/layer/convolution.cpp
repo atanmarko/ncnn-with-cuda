@@ -16,6 +16,8 @@
 
 #include "layer_type.h"
 
+#include <iomanip>
+
 namespace ncnn {
 
 Convolution::Convolution()
@@ -178,6 +180,9 @@ int Convolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& op
     if (bottom_blob_bordered.empty())
         return -100;
 
+//    std::cout << "CPU Input bottom_blob_bordered:" << std::endl;
+//    ncnn::Mat::print_mat(bottom_blob_bordered);
+
     w = bottom_blob_bordered.w;
     h = bottom_blob_bordered.h;
 
@@ -210,6 +215,9 @@ int Convolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& op
     if (top_blob.empty())
         return -100;
 
+//    std::cout << "CPU Naive Input A:" << std::endl;
+//     ncnn::Mat::print_mat(bottom_blob_bordered);
+
     // num_output
     #pragma omp parallel for num_threads(opt.num_threads)
     for (int p = 0; p < num_output; p++)
@@ -223,7 +231,11 @@ int Convolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& op
                 float sum = 0.f;
 
                 if (bias_term)
+                {
                     sum = bias_data[p];
+//                    std::cout << "Bias data num_output:" << p << " bias_data[p]:" << bias_data[p] << std::endl;
+
+                }
 
                 const float* kptr = (const float*)weight_data + maxk * channels * p;
 
@@ -238,6 +250,16 @@ int Convolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& op
                         float val = sptr[space_ofs[k]]; // 20.72
                         float w = kptr[k];
                         sum += val * w; // 41.45
+
+////                        if (p == 0 && i == 0 && j == 0 && (q == 0)) {
+                        const int input_row =  i * stride_h;
+                        const int input_column =  j * stride_w;
+////                        if (input_row == 0 && input_column == 0 && q == 0)
+//
+//                        if (p == 0 && i == 0 && j == 0 && (q == 1 || q == 0 || q == 2)) {
+//                          std::cout << "CPU num_output:" << p << " input_channel: " << q << " input_row: " << input_row << " input_column: " << input_column  << " stride wXh: " << stride_w << "X" << stride_h << " activation_type:" << activation_type
+//                                    << " Row:" << i * stride_h << " Column:" << j * stride_w << " CPU maxk:" << maxk << " k:" << k << " gpu_space_offset[k]:" << std::setw(3) << space_ofs[k] << " val: " << std::setw(10)<< val << std::setw(10) << " w:" << w << std::setw(10) << " sum: " << sum << std::endl;
+//                      }
                     }
 
                     kptr += maxk;
@@ -405,6 +427,7 @@ int Convolution::forward_int8(const Mat& bottom_blob, Mat& top_blob, const Optio
     for (int p = 0; p < num_output; p++)
     {
         signed char* outptr = top_blob.channel(p);
+        int channel_index_counter = 0;
 
         for (int i = 0; i < outh; i++)
         {
@@ -425,6 +448,10 @@ int Convolution::forward_int8(const Mat& bottom_blob, Mat& top_blob, const Optio
                         int val = sptr[space_ofs[k]];
                         int w = kptr[k];
                         sum += val * w;
+//                        if (p == 0 && i == 0 && j == 0)
+//                        if (p == 0 && i == 3)
+//                            std::cout << "CPU Row:" << i * stride_h << " Column:" << j * stride_w <<  " CPU maxk:" << maxk  << " k:" <<
+//                                k << " gpu_space_offset[k]:" << space_ofs[k] << " val: " << val << " w:" << w << " sum: " << sum << std::endl;
                     }
 
                     kptr += maxk;
@@ -454,7 +481,14 @@ int Convolution::forward_int8(const Mat& bottom_blob, Mat& top_blob, const Optio
                     }
 
                     outptr[0] = sums8;
+//                    if (p == 0 && i == 3)
+//                    {
+//                        printf("CPU Output output_index: %d scale_in: %f scale_out: %f sumfp32: %f sums8: %d output[output_index]: %d\n",
+//                               channel_index_counter, scale_in, scale_out, sumfp32, sums8, outptr[0]);
+//                    }
+
                     outptr += 1;
+                    channel_index_counter +=1;
                 }
                 else
                 {

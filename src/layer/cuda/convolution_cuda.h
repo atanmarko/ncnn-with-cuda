@@ -127,6 +127,9 @@ public:
     float* gpu_bottom_blob_int8_scale;
     float* gpu_top_blob_int8_scale;
 
+    float* gpu_scratch_pad_memory;
+    const int gpu_scratch_pad_memory_size{8*1024*1024}; //IMPORTANT: matrix size limited by scratchpad memory
+
 };
 
 } // namespace ncnn

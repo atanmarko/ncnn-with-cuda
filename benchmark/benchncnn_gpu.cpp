@@ -362,10 +362,10 @@ int main(int argc, char** argv)
 #if NCNN_CUDA
         // run cuda gpu benchmarks
     benchmark_cuda("mobilenet", ncnn::Mat(640, 480, 3), opt);
-    benchmark_cuda("mobilenet", ncnn::Mat(1280, 720, 3), opt);
-    benchmark_cuda("mobilenet", ncnn::Mat(1920, 1080, 3), opt);
-
-    benchmark_cuda("resnet50", ncnn::Mat(640, 480, 3), opt);
+//    benchmark_cuda("mobilenet", ncnn::Mat(1280, 720, 3), opt);
+//    benchmark_cuda("mobilenet", ncnn::Mat(1920, 1080, 3), opt);
+//
+//    benchmark_cuda("resnet50", ncnn::Mat(640, 480, 3), opt);
 #else
 
     // run
