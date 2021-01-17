@@ -238,7 +238,17 @@ static int detect_retinaface(const cv::Mat& bgr, std::vector<FaceObject>& faceob
 {
     ncnn::Net retinaface;
 
+#if NCNN_VULKAN
     retinaface.opt.use_vulkan_compute = true;
+#endif
+
+#if NCNN_CUDA
+    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
+    retinaface.opt.use_cuda_compute = true;
+    retinaface.opt.blob_cuda_allocator = cuda_allocator;
+    retinaface.opt.workspace_cuda_allocator = cuda_allocator;
+
+#endif
 
     // model is converted from
     // https://github.com/deepinsight/insightface/tree/master/RetinaFace#retinaface-pretrained-models
@@ -260,7 +270,6 @@ static int detect_retinaface(const cv::Mat& bgr, std::vector<FaceObject>& faceob
     ncnn::Extractor ex = retinaface.create_extractor();
 
 #if NCNN_CUDA
-    std::shared_ptr<ncnn::CudaAllocator> cuda_allocator = ncnn::get_current_gpu_allocator();
     ncnn::CudaMat gpu_in{in, cuda_allocator};
     ex.input("data", gpu_in);
 #else
