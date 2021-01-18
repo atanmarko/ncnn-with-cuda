@@ -25,6 +25,8 @@ namespace ncnn {
 
 int convolution_cuda_forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Convolution_cuda::Convolution_info& info);
 int convolution_cuda_forward_03(const CudaMat& bottom_blob, CudaMat& top_blob, const Convolution_cuda::Convolution_info& info);
+int convolution_cuda_forward_04(const CudaMat& bottom_blob, CudaMat& top_blob, const Convolution_cuda::Convolution_info& info,
+                                float* gpu_scratchpad_memory, int gpu_scratchpad_memory_size);
 int convolution_cuda_forward_int8(const CudaMat& bottom_blob, CudaMat& top_blob, const Convolution_cuda::Convolution_info& info);
 
 Convolution_cuda::Convolution_cuda()
@@ -33,10 +35,12 @@ Convolution_cuda::Convolution_cuda()
     _cuda_allocator = ncnn::get_current_gpu_allocator();
     gpu_bottom_blob_int8_scale = static_cast<float *>(_cuda_allocator->fastMalloc(sizeof(float)));
     gpu_top_blob_int8_scale = static_cast<float *>(_cuda_allocator->fastMalloc(sizeof(float)));
+    gpu_scratch_pad_memory = static_cast<float *>(_cuda_allocator->fastMalloc(gpu_scratch_pad_memory_size));
 }
 
 Convolution_cuda::~Convolution_cuda()
 {
+    _cuda_allocator->fastFree(gpu_scratch_pad_memory);
     _cuda_allocator->fastFree(gpu_bottom_blob_int8_scale);
     _cuda_allocator->fastFree(gpu_top_blob_int8_scale);
 }
@@ -255,7 +259,16 @@ int Convolution_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, con
     checkCudaErrors(cudaMemcpy(gpu_space_ofs, _space_ofs.data(), _space_ofs.size() * sizeof(int), cudaMemcpyHostToDevice));
 
 //    int result = convolution_cuda_forward_03(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs));
-    int result = convolution_cuda_forward(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs));
+    int result;
+    if (bottom_blob_bordered.c >= 16 && (((bottom_blob.total() + top_blob.total() * maxk) * sizeof(float) < gpu_scratch_pad_memory_size)))
+    {
+        result = convolution_cuda_forward_04(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs),
+                                             gpu_scratch_pad_memory, gpu_scratch_pad_memory_size);
+    }
+    else
+    {
+        result = convolution_cuda_forward(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs));
+    }
 
     opt.blob_cuda_allocator->fastFree(gpu_space_ofs);
 
