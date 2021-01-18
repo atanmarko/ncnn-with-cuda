@@ -480,8 +480,8 @@ __global__ void gpu_convolution_cuda_transform(const float* a_input, const ncnn:
     int input_index = input_channel * a_info.cstep + input_row * a_info.w + input_column;
     int output_index = input_row*a_info.w*a_info.c + input_column*a_info.c + input_channel;
     scratchpad_memory[output_index] = a_input[input_index];
-//
-//    if (output_index >= 0 && output_index <= 2) {
+
+//    if (input_row == 0 && input_column == 0 && (input_channel >=0 && input_channel <=4)) {
 //        printf("GPU TRANSFORM INDEX input channel: %d input_row: %d input_column: %d output_index: %d input_value: %f output_value: %f\n",
 //               input_channel, input_row, input_column, output_index, a_input[input_index], scratchpad_memory[output_index]);
 //    }
@@ -496,65 +496,107 @@ __global__ void gpu_convolution_cuda_forward_04(const float* a_input, const ncnn
                                              const float* weight_data, const ncnn::CudaMatInfo weight_info,
                                              const float* bias_data, const float* activation_params,
                                              float* output, const ncnn::CudaMatInfo output_info,
-                                             const ncnn::Convolution_cuda::Convolution_info product_info,
-                                             const int* const gpu_space_offset) {
+                                             const ncnn::Convolution_cuda::Convolution_info convolution_info,
+                                             const int* const gpu_space_offset,
+                                             float* scratchpad_memory) {
 
     const int output_column = blockIdx.x * blockDim.x + threadIdx.x;
     const int output_row = blockIdx.y * blockDim.y + threadIdx.y;
-    const int num_output = blockIdx.z * blockDim.z + threadIdx.z;
+    const int num_output = (blockIdx.z * blockDim.z + threadIdx.z) % convolution_info.num_output;
+    const int k_index = (blockIdx.z * blockDim.z + threadIdx.z) / convolution_info.num_output;
 
-    const int block_idx = blockIdx.z* gridDim.x*gridDim.y+blockIdx.y*blockDim.x+blockIdx.x;
+    const int block_idx = blockIdx.z * gridDim.x * gridDim.y + blockIdx.y * blockDim.x + blockIdx.x;
 
-
-    extern __shared__ float buffer[];
-    float* shared_kptr = buffer;
-
-    const int k_index = threadIdx.x;
-
-    if (k_index < product_info.maxk)
+    if (output_column >= output_info.w || output_row >= output_info.h || num_output >= output_info.c || k_index >= convolution_info.maxk)
     {
-        const float* kptr = (const float*)weight_data + product_info.maxk * a_info.c * num_output;
-        for (int input_channel = 0; input_channel < a_info.c; input_channel++)
-        {
-            shared_kptr[input_channel * product_info.maxk + k_index] = kptr[input_channel * product_info.maxk + k_index];
-        }
+        return;
     }
 
-    __syncthreads();
+    float partial_sum = 0.f;
+    if (convolution_info.bias_term && k_index == 0)
+    {
+        partial_sum += bias_data[num_output];
+    }
+
+    const float* kptr = (const float*)weight_data + convolution_info.maxk * a_info.c * num_output;
+
+    const float* sptr = a_input + output_row * convolution_info.stride_h * a_info.w * a_info.c + output_column * convolution_info.stride_w * a_info.c
+                        + gpu_space_offset[k_index] * a_info.c;
+
+//    const int input_index = output_row * convolution_info.stride_h * a_info.w * a_info.c + output_column * convolution_info.stride_w * a_info.c
+//                            + gpu_space_offset[k_index] * a_info.c;
+
+    for (int input_channel = 0; input_channel < a_info.c; input_channel++)
+    {
+        const float val = sptr[input_channel];
+        const float w = kptr[input_channel * convolution_info.maxk + k_index];
+        partial_sum += val * w;
+//        if  (num_output == 0 && output_row == 0 && output_column == 0)
+//        {
+//            printf("GPU block_idx: %d input_channel: %d input_row: %d input_column: %d"
+//                   " num_output: %d output_row: %d output_column: %d maxk: %d k: %d kptr_index: %d input_index: %d val: %f w: %f partial_sum: %f\n",
+//                   block_idx, input_channel,
+//                   output_row * convolution_info.stride_h, output_column * convolution_info.stride_w, num_output, output_row, output_column, convolution_info.maxk, k_index,
+//                   input_channel * convolution_info.maxk + k_index, input_index+input_channel, val, kptr[input_channel * convolution_info.maxk + k_index], partial_sum);
+//        }
+    }
+
+    const int scratchpad_index = (a_info.c*a_info.w*a_info.h)+(num_output * output_info.w * output_info.h + output_row * output_info.w + output_column)*convolution_info.maxk+ k_index;
+    scratchpad_memory[scratchpad_index] = partial_sum;
+//    if  (num_output == 0 && output_row == 0 && output_column == 0)
+//    {
+////    if (scratchpad_index == 0) {
+//        printf("GPU SCRATCHPAD INDEX: block_idx: %d num_output: %d output_row: %d output_column: %d maxk: %d k_index: %d scratchpad_index: %d partial_sum: %f\n",
+//               block_idx, num_output, output_row, output_column, convolution_info.maxk, k_index, scratchpad_index, partial_sum);
+//    }
+}
+
+//__device__ long long max_scratchpad_index = 0;;
+
+__global__ void gpu_convolution_cuda_forward_04_sum(const float* activation_params,
+                                                    float* output,
+                                                    const ncnn::CudaMatInfo input_info,
+                                                    const ncnn::CudaMatInfo output_info,
+                                                    const ncnn::Convolution_cuda::Convolution_info convolution_info,
+                                                    float* scratchpad_memory)
+{
+    const int output_column = blockIdx.x * blockDim.x + threadIdx.x;
+    const int output_row = blockIdx.y * blockDim.y + threadIdx.y;
+    const int num_output = (blockIdx.z * blockDim.z + threadIdx.z);
 
     if (output_column >= output_info.w || output_row >= output_info.h || num_output >= output_info.c)
     {
         return;
     }
 
-    float sum = 0.f;
-    if (product_info.bias_term)
+    const int output_index = num_output * output_info.cstep + output_row * output_info.w + output_column;
+    float sum = 0;
+
+    const int scratchpad_index = (input_info.c * input_info.w * input_info.h) + (num_output * output_info.w * output_info.h
+                                                                                 + output_row * output_info.w + output_column) * convolution_info.maxk;
+
+
+    for (int i = 0; i < convolution_info.maxk; ++i)
     {
-        sum += bias_data[num_output];
+        sum += scratchpad_memory[scratchpad_index + i];
+
+//        if (num_output == 0 && output_row == 1 && output_column == 0)
+//        {
+//            printf("GPU sum: num_output: %d output_row: %d output_column: %d maxk: %d i: %d current_value: %f sum: %f\n",
+//                   num_output, output_row, output_column, convolution_info.maxk, i, scratchpad_memory[num_output * convolution_info.maxk + i],  sum);
+//        }
     }
 
-    for (int k = 0; k < product_info.maxk; k++)
-    {
-        const float* sptr = a_input + output_row * product_info.stride_h * a_info.w * a_info.c + output_column * product_info.stride_w * a_info.c
-                            + gpu_space_offset[k] * a_info.c;
-        for (int input_channel = 0; input_channel < a_info.c; input_channel++)
-        {
-            const float val = sptr[input_channel];
-            const float w = shared_kptr[input_channel * product_info.maxk + k];
-            sum += val * w;
-        }
-    }
-
-    if (product_info.activation_type == 1)
+    if (convolution_info.activation_type == 1)
     {
         sum = max(sum, 0.f);
     }
-    else if (product_info.activation_type == 2)
+    else if (convolution_info.activation_type == 2)
     {
         float slope = activation_params[0];
         sum = sum > 0.f ? sum : sum * slope;
     }
-    else if (product_info.activation_type == 3)
+    else if (convolution_info.activation_type == 3)
     {
         float min = activation_params[0];
         float max = activation_params[1];
@@ -563,18 +605,16 @@ __global__ void gpu_convolution_cuda_forward_04(const float* a_input, const ncnn
         if (sum > max)
             sum = max;
     }
-    else if (product_info.activation_type == 4)
+    else if (convolution_info.activation_type == 4)
     {
         sum = static_cast<float>(1.f / (1.f + exp(-sum)));
     }
-    else if (product_info.activation_type == 5)
+    else if (convolution_info.activation_type == 5)
     {
         sum = static_cast<float>(sum * tanh(log(exp(sum) + 1.f)));
     }
 
-    const int output_index = num_output * output_info.cstep + output_row * output_info.w + output_column;
     output[output_index] = sum;
-
 }
 
 
@@ -588,7 +628,9 @@ int convolution_cuda_forward_04(const CudaMat& bottom_blob, CudaMat& top_blob, c
 {
     //transform input
 
-    if (bottom_blob.total() > gpu_scratchpad_memory_size) {
+    if ((bottom_blob.total() + top_blob.total()*info.maxk)*sizeof(float) > gpu_scratchpad_memory_size) {
+        std::cout << "CONVOLUTION current scratchpad memory: " << gpu_scratchpad_memory_size << " required: "
+                  << (bottom_blob.total() + top_blob.total() * info.maxk) * sizeof(float) << std::endl;
         throw  std::runtime_error("Not enough scratchpad memory");
     }
 
@@ -614,9 +656,6 @@ int convolution_cuda_forward_04(const CudaMat& bottom_blob, CudaMat& top_blob, c
                                                                                   bottom_blob_info,
                                                                                   gpu_scratchpad_memory);
 
-//    cudaDeviceSynchronize();
-//    checkCudaErrors(cudaGetLastError());
-
     const int number_of_threads = top_blob.w > info.maxk ? top_blob.w : info.maxk;
     int thread_per_block_x = ((number_of_threads - 1) / 8 + 1) * 8;
     if (thread_per_block_x > 8) thread_per_block_x = 8;
@@ -624,18 +663,22 @@ int convolution_cuda_forward_04(const CudaMat& bottom_blob, CudaMat& top_blob, c
     if (thread_per_block_y > 2) thread_per_block_y = 2;
     int thread_per_block_z = ((top_blob.c - 1) / 32 + 1) * 32;
     if (thread_per_block_z > 64) thread_per_block_z = 64;
-    const int total_number_of_channels = top_blob.c;
+
     const int total_number_of_columns = top_blob.w;
     const int total_number_of_rows = top_blob.h;
+    const int total_number_of_channels = top_blob.c * info.maxk;
+//    const int total_number_of_channels = top_blob.c;
 
     const dim3 block_size(thread_per_block_x, thread_per_block_y, thread_per_block_z);
     const dim3 grid_size((total_number_of_columns - 1) / thread_per_block_x + 1,
                          (total_number_of_rows - 1) / thread_per_block_y + 1,
                          (total_number_of_channels - 1) / thread_per_block_z + 1);
 
-//    std::cout << "grid size: x:" << grid_size.x << " y:" << grid_size.y << " z:" << grid_size.z << " block size x:" << block_size.x << " y:" << block_size.y << " z:" << block_size.z << std::endl;
+//    std::cout << "input: c: " << bottom_blob.c << " h: " << bottom_blob.h<<" w: " << bottom_blob.w << " output c: " << top_blob.c << " h: " << top_blob.h << " w: " << top_blob.w <<
+//        " maxk: " << info.maxk << " grid size: x:" << grid_size.x << " y:" << grid_size.y << " z:" << grid_size.z << " block size x:" << block_size.x << " y:"
+//              << block_size.y << " z:" << block_size.z << std::endl;
 
-    gpu_convolution_cuda_forward_04<<<grid_size, block_size, bottom_blob.c * info.maxk * sizeof(float)>>>(static_cast<const float*>(gpu_scratchpad_memory),
+    gpu_convolution_cuda_forward_04<<<grid_size, block_size>>>(static_cast<const float*>(gpu_scratchpad_memory),
                                                                                                        bottom_blob_info,
                                                                                                        static_cast<const float*>(info.gpu_weight_data->get_craw_data()),
                                                                                                        weight_info,
@@ -644,10 +687,29 @@ int convolution_cuda_forward_04(const CudaMat& bottom_blob, CudaMat& top_blob, c
                                                                                                        static_cast<float*>(top_blob.get_raw_data()),
                                                                                                        top_blob_info,
                                                                                                        info,
-                                                                                                       static_cast<const int*>(info.gpu_space_ofs));
+                                                                                                       static_cast<const int*>(info.gpu_space_ofs),
+                                                                                                          gpu_scratchpad_memory);
 
-//    cudaDeviceSynchronize();
-//    checkCudaErrors(cudaGetLastError());
+    int thread_per_block_sum_x = ((top_blob.w - 1) / 16 + 1) * 16;
+    if (thread_per_block_sum_x > 16) thread_per_block_sum_x = 16;
+    int thread_per_block_sum_y = ((bottom_blob.h - 1) / 2 + 1) * 2;
+    if (thread_per_block_sum_y > 2) thread_per_block_sum_y = 2;
+    const int thread_per_block_sum_z = 16;
+    const int total_number_of_columns_sum = top_blob.w;
+    const int total_number_of_rows_sum = top_blob.h;
+    const int total_number_of_channels_sum = top_blob.c;
+
+    const dim3 block_size_sum(thread_per_block_sum_x, thread_per_block_sum_y, thread_per_block_sum_z);
+    const dim3 grid_size_sum((total_number_of_columns_sum - 1) / thread_per_block_sum_x + 1,
+                                   (total_number_of_rows_sum - 1) / thread_per_block_sum_y + 1,
+                                   (total_number_of_channels_sum - 1) / thread_per_block_sum_z + 1);
+
+    gpu_convolution_cuda_forward_04_sum<<<grid_size_sum, block_size_sum>>>(static_cast<const float*>(info.gpu_activation_params->get_craw_data()),
+                                                                             static_cast<float*>(top_blob.get_raw_data()),
+                                                                             bottom_blob_info,
+                                                                             top_blob_info,
+                                                                             info,
+                                                                             gpu_scratchpad_memory);
 
     return 0;
 }

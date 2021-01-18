@@ -256,7 +256,7 @@ int Convolution::forward(const Mat& bottom_blob, Mat& top_blob, const Option& op
                         const int input_column =  j * stride_w;
 ////                        if (input_row == 0 && input_column == 0 && q == 0)
 //
-//                        if (p == 0 && i == 0 && j == 0 && (q == 1 || q == 0 || q == 2)) {
+//                        if (p == 0 && i == 0 && j == 0 && (q >=0 && q<=3)) {
 //                          std::cout << "CPU num_output:" << p << " input_channel: " << q << " input_row: " << input_row << " input_column: " << input_column  << " stride wXh: " << stride_w << "X" << stride_h << " activation_type:" << activation_type
 //                                    << " Row:" << i * stride_h << " Column:" << j * stride_w << " CPU maxk:" << maxk << " k:" << k << " gpu_space_offset[k]:" << std::setw(3) << space_ofs[k] << " val: " << std::setw(10)<< val << std::setw(10) << " w:" << w << std::setw(10) << " sum: " << sum << std::endl;
 //                      }
