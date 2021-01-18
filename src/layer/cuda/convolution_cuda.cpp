@@ -260,17 +260,15 @@ int Convolution_cuda::forward(const CudaMat& bottom_blob, CudaMat& top_blob, con
 
 //    int result = convolution_cuda_forward_03(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs));
     int result;
-    if (bottom_blob_bordered.c >= 32) {
+    if (bottom_blob_bordered.c >= 16 && (((bottom_blob.total() + top_blob.total() * maxk) * sizeof(float) < gpu_scratch_pad_memory_size)))
+    {
         result = convolution_cuda_forward_04(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs),
                                              gpu_scratch_pad_memory, gpu_scratch_pad_memory_size);
-//        result = convolution_cuda_forward(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs));
-    } else {
-//        result = convolution_cuda_forward_04(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs),
-//                                             gpu_scratch_pad_memory, gpu_scratch_pad_memory_size);
+    }
+    else
+    {
         result = convolution_cuda_forward(bottom_blob_bordered, top_blob, Convolution_info(*this, gpu_space_ofs));
     }
-
-
 
     opt.blob_cuda_allocator->fastFree(gpu_space_ofs);
 
